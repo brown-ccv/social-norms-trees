@@ -109,7 +109,9 @@ def create_root() -> py_trees.behaviour.Behaviour:
     Returns:
         the root behaviour
     """
-    root = py_trees.composites.Selector(name="Selector", memory=False)
+    root = py_trees.composites.Selector(name="Selector", memory=True)
+    root2 = py_trees.composites.Selector(name="Selector", memory=True)
+    root3 = py_trees.composites.Selector(name="Selector", memory=True)
     ffs = py_trees.behaviours.StatusQueue(
         name="FFS",
         queue=[
@@ -120,8 +122,35 @@ def create_root() -> py_trees.behaviour.Behaviour:
         eventually=py_trees.common.Status.SUCCESS,
     )
     always_running = py_trees.behaviours.Running(name="Running")
-    root.add_children([ffs, always_running])
-    return root
+    ffs3 = py_trees.behaviours.StatusQueue(
+        name="FFS",
+        queue=[
+            py_trees.common.Status.FAILURE,
+            py_trees.common.Status.FAILURE,
+            py_trees.common.Status.SUCCESS,
+        ],
+        eventually=py_trees.common.Status.SUCCESS,
+    )
+    always_running3 = py_trees.behaviours.Running(name="Running")
+    ffs2 = py_trees.behaviours.StatusQueue(
+        name="FFS",
+        queue=[
+            py_trees.common.Status.FAILURE,
+            py_trees.common.Status.FAILURE,
+            py_trees.common.Status.SUCCESS,
+        ],
+        eventually=py_trees.common.Status.SUCCESS,
+    )
+    always_running2 = py_trees.behaviours.Running(name="Running")
+    new_root = py_trees.composites.Selector(name="Selector", memory=False).add_children([root, root2, root3])
+    # new_root.add_children([ffs, always_running])
+    root.add_children([ffs])
+    root2.add_children([ffs2])
+    root3.add_children([ffs3, always_running])
+    # root2.add_children([ffs, always_running])
+    # root3.add_children([ffs2, always_running2])
+    # root.add_children([ffs3, always_running3])
+    return new_root
 
 
 ##############################################################################
@@ -148,7 +177,7 @@ def main() -> None:
     # Execute
     ####################
     root.setup_with_descendants()
-    for i in range(1, 4):
+    for i in range(1, 12):
         try:
             print("\n--------- Tick {0} ---------\n".format(i))
             root.tick_once()
@@ -158,5 +187,6 @@ def main() -> None:
         except KeyboardInterrupt:
             break
     print("\n")
+
 
 # main()

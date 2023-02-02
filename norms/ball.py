@@ -96,8 +96,20 @@ def command_line_argument_parser() -> argparse.ArgumentParser:
         epilog=epilog(),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "-r", "--render", action="store_true", help="render dot tree to file"
+    )
+    group.add_argument(
+        "--render-with-blackboard-variables",
+        action="store_true",
+        help="render dot tree to file with blackboard variables",
+    )
+    group.add_argument(
+        "-i",
+        "--interactive",
+        action="store_true",
+        help="pause and wait for keypress at each tick",
     )
     return parser
 
@@ -109,18 +121,47 @@ def create_root() -> py_trees.behaviour.Behaviour:
     Returns:
         the root behaviour
     """
-    root = py_trees.composites.Selector(name="Selector", memory=False)
-    ffs = py_trees.behaviours.StatusQueue(
-        name="FFS",
+    root = py_trees.composites.Sequence(name="Sequence", memory=False)
+
+    find = py_trees.behaviours.Success(name="Find Ball")
+
+    pick_up_ball = py_trees.composites.Sequence(name="Sequence", memory=False)
+
+    place = py_trees.behaviours.Success(name="Place Ball")
+
+    root.add_children([find, pick_up_ball, place])
+
+    move_to_ball = py_trees.composites.Selector(name="Selector", memory=False)
+
+    obtain_ball = py_trees.composites.Selector(name="Selector", memory=False)
+
+    pick_up_ball.add_children([move_to_ball, obtain_ball])
+
+    isClose = py_trees.behaviours.StatusQueue(
+        name="Ball close?",
         queue=[
-            py_trees.common.Status.FAILURE,
             py_trees.common.Status.FAILURE,
             py_trees.common.Status.SUCCESS,
         ],
         eventually=py_trees.common.Status.SUCCESS,
     )
-    always_running = py_trees.behaviours.Running(name="Running")
-    root.add_children([ffs, always_running])
+    approach = py_trees.behaviours.Running(name="Approach Ball")
+    
+    move_to_ball.add_children([isClose, approach])
+
+    
+    isGrasped = py_trees.behaviours.StatusQueue(
+        name="Ball Grasped?",
+        queue=[
+            py_trees.common.Status.FAILURE,
+            py_trees.common.Status.SUCCESS,
+        ],
+        eventually=py_trees.common.Status.SUCCESS,
+    )
+    grasp = py_trees.behaviours.Running(name="Grasp Ball")
+    
+    obtain_ball.add_children([isGrasped, grasp])
+
     return root
 
 
@@ -154,9 +195,10 @@ def main() -> None:
             root.tick_once()
             print("\n")
             print(py_trees.display.unicode_tree(root=root, show_status=True))
-            time.sleep(1.0)
+            # time.sleep(1.0)
         except KeyboardInterrupt:
             break
     print("\n")
 
-# main()
+
+main()
