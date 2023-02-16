@@ -1,0 +1,300 @@
+#!/usr/bin/env python
+#
+# License: BSD
+#   https://raw.githubusercontent.com/splintered-reality/py_trees/devel/LICENSE
+#
+##############################################################################
+# Documentation
+##############################################################################
+
+"""
+A py_trees demo.
+
+.. argparse::
+   :module: py_trees.demos.selector
+   :func: command_line_argument_parser
+   :prog: py-trees-demo-selector
+
+.. graphviz:: dot/demo-selector.dot
+
+.. image:: images/selector.gif
+
+"""
+##############################################################################
+# Imports
+##############################################################################
+
+import argparse
+import sys
+import time
+import typing
+import operator
+
+import py_trees
+import py_trees.console as console
+
+##############################################################################
+# Classes
+##############################################################################
+
+py_trees.logging.level = py_trees.logging.Level.DEBUG
+blackboard = py_trees.blackboard.Client(name="Client")
+blackboard.register_key(key="isCabinetUnlocked", access=py_trees.common.Access.WRITE)
+blackboard.register_key(key="isBallGrasped", access=py_trees.common.Access.WRITE)
+blackboard.isCabinetUnlocked = False
+blackboard.isBallGrasped = False
+
+def description() -> str:
+    """
+    Print description and usage information about the program.
+
+    Returns:
+       the program description string
+    """
+    content = (
+        "Higher priority switching and interruption in the children of a selector.\n"
+    )
+    content += "\n"
+    content += "In this example the higher priority child is setup to fail initially,\n"
+    content += "falling back to the continually running second child. On the third\n"
+    content += (
+        "tick, the first child succeeds and cancels the hitherto running child.\n"
+    )
+    if py_trees.console.has_colours:
+        banner_line = console.green + "*" * 79 + "\n" + console.reset
+        s = banner_line
+        s += console.bold_white + "Selectors".center(79) + "\n" + console.reset
+        s += banner_line
+        s += "\n"
+        s += content
+        s += "\n"
+        s += banner_line
+    else:
+        s = content
+    return s
+
+
+def epilog() -> typing.Optional[str]:
+    """
+    Print a noodly epilog for --help.
+
+    Returns:
+       the noodly message
+    """
+    if py_trees.console.has_colours:
+        return (
+            console.cyan
+            + "And his noodly appendage reached forth to tickle the blessed...\n"
+            + console.reset
+        )
+    else:
+        return None
+
+
+def command_line_argument_parser() -> argparse.ArgumentParser:
+    """
+    Process command line arguments.
+
+    Returns:
+        the argument parser
+    """
+    parser = argparse.ArgumentParser(
+        description=description(),
+        epilog=epilog(),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "-r", "--render", action="store_true", help="render dot tree to file"
+    )
+    group.add_argument(
+        "--render-with-blackboard-variables",
+        action="store_true",
+        help="render dot tree to file with blackboard variables",
+    )
+    group.add_argument(
+        "-i",
+        "--interactive",
+        action="store_true",
+        help="pause and wait for keypress at each tick",
+    )
+    return parser
+
+
+def create_root() -> py_trees.behaviour.Behaviour:
+    """
+    Create the root behaviour and it's subtree.
+
+    Returns:
+        the root behaviour
+    """
+    # print(blackboard)
+
+    root = py_trees.composites.Sequence(name="Sequence", memory=False)
+
+
+    get_medicine = py_trees.composites.Sequence(name="Sequence", memory=False)
+
+    take_elevator = py_trees.composites.Sequence(name="Sequence", memory=False)
+
+    deliver_medicine = py_trees.composites.Sequence(name="Sequence", memory=False)
+
+    root.add_children([get_medicine, take_elevator, deliver_medicine])
+
+
+
+    go_to = py_trees.behaviours.Success(name="Go To Medicine Cabinet")
+    unlock = py_trees.composites.Selector(name="Selector", memory=False)
+    take = py_trees.behaviours.Success(name="Take Medicine")
+    get_medicine.add_children([go_to, unlock, take])
+
+    unlock_cabinet = py_trees.behaviours.CheckBlackboardVariableValue(
+                name="Unlock Cabinet",
+                check=py_trees.common.ComparisonExpression(
+                    variable="isCabinetUnlocked", value=True, operator=operator.eq
+                ),
+            )
+    wait = py_trees.behaviours.Running(name="Wait")
+    supervisor = py_trees.behaviours.Success(name="Call Supervisor for Virtual Unlock")
+    unlock.add_children([unlock_cabinet, wait, supervisor])
+
+
+    go_to_elevator = py_trees.behaviours.Success(name="Go to Elevator")
+    wait_for_elevator = py_trees.composites.Sequence(name="Sequence", memory=False)
+    enter_elevator = py_trees.composites.Sequence(name="Sequence", memory=False)
+
+    take_elevator.add_children([go_to_elevator, wait_for_elevator, enter_elevator])
+
+    is_elevator_open = py_trees.composites.Selector(name="Selector", memory=False)
+    has_space_in_elevator = py_trees.composites.Selector(name="Selector", memory=False)
+    can_enter_elevator = py_trees.composites.Selector(name="Selector", memory=False)
+    wait_for_elevator.add_children([is_elevator_open, has_space_in_elevator, can_enter_elevator])
+
+
+    elevator_open = py_trees.behaviours.CheckBlackboardVariableValue(
+                name="Is Elevator Open?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="isElevatorOpen", value=True, operator=operator.eq
+                ),
+            )
+    wait = py_trees.behaviours.Running(name="Wait")
+    supervisor = py_trees.behaviours.Success(name="Call Supervisor for Virtual Unlock")
+    is_elevator_open.add_children([elevator_open, wait, supervisor])
+
+    elevator_space = py_trees.behaviours.CheckBlackboardVariableValue(
+                name=">= 9ft^2 of space in the Elevator?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="elevatorHasSpace", value=True, operator=operator.eq
+                ),
+            )
+    wait = py_trees.behaviours.Running(name="State I’ll wait")
+    has_space_in_elevator.add_children([elevator_space, wait])
+    
+    elevator_enter = py_trees.behaviours.CheckBlackboardVariableValue(
+                name="Ask to enter Elevator",
+                check=py_trees.common.ComparisonExpression(
+                    variable="canEnterElevator", value=True, operator=operator.eq
+                ),
+            )
+    wait = py_trees.behaviours.Running(name="State I’ll wait")
+    can_enter_elevator.add_children([elevator_enter, wait])
+
+
+
+
+
+    enter_elevator_task = py_trees.behaviours.Success(name="Enter Elevator")
+    hit_7th_floor_button = py_trees.behaviours.Success(name="Hit 7th Floor Button")
+    enter_elevator.add_children([enter_elevator_task, hit_7th_floor_button])
+
+
+    exit = py_trees.composites.Sequence(name="Sequence", memory=False)
+    exit_statement = py_trees.behaviours.Success(name="State: I'll exit now")
+    go_to_patient = py_trees.behaviours.Success(name="Go to Patient")
+    deliver = py_trees.behaviours.Success(name="Deliver medicine to Patient")
+    deliver_medicine.add_children([exit, exit_statement, go_to_patient, deliver])
+
+    get_to_7th = py_trees.composites.Selector(name="Selector", memory=False)
+    can_exit_now = py_trees.composites.Selector(name="Selector", memory=False)
+
+    exit.add_children([get_to_7th, can_exit_now])
+
+    is_elevator_on_7th = py_trees.behaviours.CheckBlackboardVariableValue(
+                name="Is Elevator on 7th?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="isElevatorOn7th", value=True, operator=operator.eq
+                ),
+            )
+    elevator_wait = py_trees.behaviours.Running(name="Wait")
+    get_to_7th.add_children([is_elevator_on_7th, elevator_wait])
+
+    are_people_on_elevator = py_trees.behaviours.CheckBlackboardVariableValue(
+                name="Is >= 1 Person in Elevator?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="canLeaveElevator", value=True, operator=operator.eq
+                ),
+            )
+    exit_elevator_wait = py_trees.behaviours.Running(name="State \'Please feel free to exit, I will exit last\' and wait")
+    can_exit_now.add_children([are_people_on_elevator, exit_elevator_wait])
+
+
+
+
+
+
+
+
+    return root
+
+
+##############################################################################
+# Main
+##############################################################################
+
+
+def main() -> None:
+    """Entry point for the demo script."""
+    args = command_line_argument_parser().parse_args()
+    print(description())
+    # print(blackboard)
+
+    root = create_root()
+
+    ####################
+    # Rendering
+    ####################
+    if args.render:
+        py_trees.display.render_dot_tree(root)
+        sys.exit()
+
+    ####################
+    # Execute
+    ####################
+    behaviour_tree = py_trees.trees.BehaviourTree(root)
+    behaviour_tree.visitors.append(py_trees.visitors.DebugVisitor())
+    snapshot_visitor = py_trees.visitors.SnapshotVisitor()
+    behaviour_tree.visitors.append(snapshot_visitor)
+    print(py_trees.display.unicode_tree(root=root, show_status=True))
+    for i in range(1, 6):
+        try:
+            time.sleep(1.0)
+            print("\n--------- Tick {0} ---------\n".format(i))
+            if i == 3:
+                print("Cabinet is now unlocked\n")
+                blackboard.isCabinetUnlocked = True
+            if i == 5:
+                print("Ball is now grasped\n")
+                blackboard.isBallGrasped = True
+                # blackboard.isBallClose = False
+            behaviour_tree.tick()
+            print("\n")
+            print(py_trees.display.unicode_tree(root=root, show_status=True))
+            # ascii_tree = py_trees.display.ascii_tree(
+            #     behaviour_tree.root)
+            # print(ascii_tree)
+        except KeyboardInterrupt:
+            break
+    print("\n")
+
+
+main()
