@@ -28,6 +28,7 @@ import argparse
 import sys
 import time
 import typing
+import operator
 
 import py_trees
 import py_trees.console as console
@@ -36,6 +37,12 @@ import py_trees.console as console
 # Classes
 ##############################################################################
 
+py_trees.logging.level = py_trees.logging.Level.DEBUG
+blackboard = py_trees.blackboard.Client(name="Client")
+blackboard.register_key(key="isBallClose", access=py_trees.common.Access.WRITE)
+blackboard.register_key(key="isBallGrasped", access=py_trees.common.Access.WRITE)
+blackboard.isBallClose = False
+blackboard.isBallGrasped = False
 
 def description() -> str:
     """
@@ -137,28 +144,28 @@ def create_root() -> py_trees.behaviour.Behaviour:
 
     pick_up_ball.add_children([move_to_ball, obtain_ball])
 
-    isClose = py_trees.behaviours.StatusQueue(
-        name="Ball close?",
-        queue=[
-            py_trees.common.Status.FAILURE,
-            py_trees.common.Status.FAILURE,
-            py_trees.common.Status.SUCCESS,
-        ],
-        eventually=py_trees.common.Status.SUCCESS,
-    )
+    print(blackboard)
+
+
+    isClose = py_trees.behaviours.CheckBlackboardVariableValue(
+                name="Ball Close?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="isBallClose", value=True, operator=operator.eq
+                ),
+            )
+
     approach = py_trees.behaviours.Running(name="Approach Ball")
     
     move_to_ball.add_children([isClose, approach])
 
-    
-    isGrasped = py_trees.behaviours.StatusQueue(
-        name="Ball Grasped?",
-        queue=[
-            py_trees.common.Status.FAILURE,
-            py_trees.common.Status.SUCCESS,
-        ],
-        eventually=py_trees.common.Status.SUCCESS,
-    )
+
+    isGrasped = py_trees.behaviours.CheckBlackboardVariableValue(
+                name="Ball Grasped?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="isBallGrasped", value=True, operator=operator.eq
+                ),
+            )
+
     grasp = py_trees.behaviours.Running(name="Grasp Ball")
     
     obtain_ball.add_children([isGrasped, grasp])
@@ -175,7 +182,7 @@ def main() -> None:
     """Entry point for the demo script."""
     args = command_line_argument_parser().parse_args()
     print(description())
-    py_trees.logging.level = py_trees.logging.Level.DEBUG
+    # print(blackboard)
 
     root = create_root()
 
@@ -191,10 +198,17 @@ def main() -> None:
     ####################
     root.setup_with_descendants()
     print(py_trees.display.unicode_tree(root=root, show_status=True))
-    for i in range(1, 5):
+    for i in range(1, 6):
         try:
-            time.sleep(3.0)
+            time.sleep(1.0)
             print("\n--------- Tick {0} ---------\n".format(i))
+            if i == 3:
+                print("Ball is now close\n")
+                blackboard.isBallClose = True
+            if i == 5:
+                print("Ball is now grasped\n")
+                blackboard.isBallGrasped = True
+                # blackboard.isBallClose = False
             root.tick_once()
             print("\n")
             print(py_trees.display.unicode_tree(root=root, show_status=True))
