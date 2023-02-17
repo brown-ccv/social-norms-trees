@@ -40,9 +40,17 @@ import py_trees.console as console
 py_trees.logging.level = py_trees.logging.Level.DEBUG
 blackboard = py_trees.blackboard.Client(name="Client")
 blackboard.register_key(key="isCabinetUnlocked", access=py_trees.common.Access.WRITE)
-blackboard.register_key(key="isBallGrasped", access=py_trees.common.Access.WRITE)
+blackboard.register_key(key="isElevatorOpen", access=py_trees.common.Access.WRITE)
+blackboard.register_key(key="elevatorHasSpace", access=py_trees.common.Access.WRITE)
+blackboard.register_key(key="canEnterElevator", access=py_trees.common.Access.WRITE)
+blackboard.register_key(key="isElevatorOn7th", access=py_trees.common.Access.WRITE)
+blackboard.register_key(key="canLeaveElevator", access=py_trees.common.Access.WRITE)
 blackboard.isCabinetUnlocked = False
-blackboard.isBallGrasped = False
+blackboard.isElevatorOpen = False
+blackboard.elevatorHasSpace = False
+blackboard.canEnterElevator = False
+blackboard.isElevatorOn7th = False
+blackboard.canLeaveElevator = False
 
 def description() -> str:
     """
@@ -275,7 +283,7 @@ def main() -> None:
     snapshot_visitor = py_trees.visitors.SnapshotVisitor()
     behaviour_tree.visitors.append(snapshot_visitor)
     print(py_trees.display.unicode_tree(root=root, show_status=True))
-    for i in range(1, 6):
+    for i in range(1, 15):
         try:
             time.sleep(1.0)
             print("\n--------- Tick {0} ---------\n".format(i))
@@ -283,9 +291,17 @@ def main() -> None:
                 print("Cabinet is now unlocked\n")
                 blackboard.isCabinetUnlocked = True
             if i == 5:
-                print("Ball is now grasped\n")
-                blackboard.isBallGrasped = True
-                # blackboard.isBallClose = False
+                # print("Ball is now grasped\n")
+                blackboard.isElevatorOpen = True
+            if i == 7:
+                blackboard.elevatorHasSpace = True
+            if i == 9:
+                blackboard.canEnterElevator = True
+            if i == 11:
+                blackboard.isElevatorOn7th = True
+            if i == 13:
+                blackboard.canLeaveElevator = True
+
             behaviour_tree.tick()
             print("\n")
             print(py_trees.display.unicode_tree(root=root, show_status=True))
