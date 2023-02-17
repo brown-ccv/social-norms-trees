@@ -173,8 +173,9 @@ def create_root() -> py_trees.behaviour.Behaviour:
                 ),
             )
     wait_cabinet = wait("Wait for at most 3 Ticks", 3)
-    supervisor = py_trees.behaviours.Success(name="Call Supervisor for Virtual Unlock")
-    unlock.add_children([unlock_cabinet, wait_cabinet, supervisor])
+    # supervisor = py_trees.behaviours.Success(name="Call Supervisor for Virtual Unlock")
+    # unlock.add_children([unlock_cabinet, wait_cabinet, supervisor])
+    unlock.add_children([unlock_cabinet, wait_cabinet])
 
 
     go_to_elevator = py_trees.behaviours.Success(name="Go to Elevator")
@@ -197,8 +198,9 @@ def create_root() -> py_trees.behaviour.Behaviour:
                 ),
             )
     wait_for_open_elevator = wait("Wait for at most 5 Ticks", 5)
-    supervisor = py_trees.behaviours.Success(name="Call Supervisor to Virtually Call Elevator")
-    is_elevator_open.add_children([elevator_open, wait_for_open_elevator, supervisor])
+    # supervisor = py_trees.behaviours.Success(name="Call Supervisor to Virtually Call Elevator")
+    # is_elevator_open.add_children([elevator_open, wait_for_open_elevator, supervisor])
+    is_elevator_open.add_children([elevator_open, wait_for_open_elevator])
 
     elevator_space = py_trees.behaviours.CheckBlackboardVariableValue(
                 name=">= 9ft^2 of space in the Elevator?",
@@ -300,12 +302,11 @@ def main() -> None:
         try:
             time.sleep(1.0)
             print("\n--------- Tick {0} ---------\n".format(i))
-            if i == 3:
-                print("Cabinet is now unlocked\n")
-                blackboard.isCabinetUnlocked = True
-            if i == 5:
-                # print("Ball is now grasped\n")
-                blackboard.isElevatorOpen = True
+            # if i == 3:
+            #     print("Cabinet is now unlocked\n")
+            #     blackboard.isCabinetUnlocked = True
+            # if i == 5:
+            #     blackboard.isElevatorOpen = True
             if i == 7:
                 blackboard.elevatorHasSpace = True
             if i == 9:
@@ -314,6 +315,8 @@ def main() -> None:
                 blackboard.isElevatorOn7th = True
             if i == 13:
                 blackboard.canLeaveElevator = True
+            # if i == 15:
+            #     blackboard.isElevatorOpen = True
 
             behaviour_tree.tick()
             print("\n")
@@ -323,6 +326,23 @@ def main() -> None:
             # print(ascii_tree)
             if behaviour_tree.root.status == py_trees.common.Status.SUCCESS:
                 tree_success = True
+            elif behaviour_tree.root.status == py_trees.common.Status.FAILURE:
+                callSupervisor = input("Should the robot call it's supervisor for help on the next tick for the failed task? (1 for Yes 0 for No)\n")
+                if callSupervisor == "1":
+                    node = behaviour_tree.root
+                    found = False
+                    while not found:
+                        for n in node.children:
+                            if n.status == py_trees.common.Status.FAILURE:
+                                node = n
+                                break
+                        if type(node) == py_trees.composites.Selector:
+                            found = True
+                    # supervisor = py_trees.behaviours.Success(name="Call Supervisor to " + node.name)
+                    supervisor = py_trees.behaviours.Success(name="Call Supervisor for help")
+                    node.add_children([supervisor])
+                    
+
             i += 1
         except KeyboardInterrupt:
             break
