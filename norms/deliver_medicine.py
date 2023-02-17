@@ -128,6 +128,16 @@ def command_line_argument_parser() -> argparse.ArgumentParser:
     )
     return parser
 
+def wait(name, ticks) -> py_trees.behaviours.StatusQueue:
+    queue = []
+    for i in range(0, ticks + 1):
+        queue.append(py_trees.common.Status.RUNNING)
+    return py_trees.behaviours.StatusQueue(
+        name=name,
+        queue=queue,
+        eventually=py_trees.common.Status.FAILURE,
+    )
+
 
 def create_root() -> py_trees.behaviour.Behaviour:
     """
@@ -162,16 +172,17 @@ def create_root() -> py_trees.behaviour.Behaviour:
                     variable="isCabinetUnlocked", value=True, operator=operator.eq
                 ),
             )
-    wait = py_trees.behaviours.Running(name="Wait")
+    wait_cabinet = wait("Wait for at most 3 Ticks", 3)
     supervisor = py_trees.behaviours.Success(name="Call Supervisor for Virtual Unlock")
-    unlock.add_children([unlock_cabinet, wait, supervisor])
+    unlock.add_children([unlock_cabinet, wait_cabinet, supervisor])
 
 
     go_to_elevator = py_trees.behaviours.Success(name="Go to Elevator")
+    click_up_button = py_trees.behaviours.Success(name="Click Up Button")
     wait_for_elevator = py_trees.composites.Sequence(name="Sequence", memory=False)
     enter_elevator = py_trees.composites.Sequence(name="Sequence", memory=False)
 
-    take_elevator.add_children([go_to_elevator, wait_for_elevator, enter_elevator])
+    take_elevator.add_children([go_to_elevator, click_up_button, wait_for_elevator, enter_elevator])
 
     is_elevator_open = py_trees.composites.Selector(name="Selector", memory=False)
     has_space_in_elevator = py_trees.composites.Selector(name="Selector", memory=False)
@@ -185,9 +196,9 @@ def create_root() -> py_trees.behaviour.Behaviour:
                     variable="isElevatorOpen", value=True, operator=operator.eq
                 ),
             )
-    wait = py_trees.behaviours.Running(name="Wait")
-    supervisor = py_trees.behaviours.Success(name="Call Supervisor for Virtual Unlock")
-    is_elevator_open.add_children([elevator_open, wait, supervisor])
+    wait_for_open_elevator = wait("Wait for at most 5 Ticks", 5)
+    supervisor = py_trees.behaviours.Success(name="Call Supervisor to Virtually Call Elevator")
+    is_elevator_open.add_children([elevator_open, wait_for_open_elevator, supervisor])
 
     elevator_space = py_trees.behaviours.CheckBlackboardVariableValue(
                 name=">= 9ft^2 of space in the Elevator?",
@@ -195,8 +206,8 @@ def create_root() -> py_trees.behaviour.Behaviour:
                     variable="elevatorHasSpace", value=True, operator=operator.eq
                 ),
             )
-    wait = py_trees.behaviours.Running(name="State I’ll wait")
-    has_space_in_elevator.add_children([elevator_space, wait])
+    wait_for_space = py_trees.behaviours.Running(name="State \'I’ll wait\'")
+    has_space_in_elevator.add_children([elevator_space, wait_for_space])
     
     elevator_enter = py_trees.behaviours.CheckBlackboardVariableValue(
                 name="Ask to enter Elevator",
@@ -204,8 +215,8 @@ def create_root() -> py_trees.behaviour.Behaviour:
                     variable="canEnterElevator", value=True, operator=operator.eq
                 ),
             )
-    wait = py_trees.behaviours.Running(name="State I’ll wait")
-    can_enter_elevator.add_children([elevator_enter, wait])
+    wait_to_enter_elevator = py_trees.behaviours.Running(name="State I’ll wait")
+    can_enter_elevator.add_children([elevator_enter, wait_to_enter_elevator])
 
 
 
@@ -242,7 +253,7 @@ def create_root() -> py_trees.behaviour.Behaviour:
                     variable="canLeaveElevator", value=True, operator=operator.eq
                 ),
             )
-    exit_elevator_wait = py_trees.behaviours.Running(name="State \'Please feel free to exit, I will exit last\' and wait")
+    exit_elevator_wait = wait("Wait for at most 3 Ticks", 3)
     can_exit_now.add_children([are_people_on_elevator, exit_elevator_wait])
 
 
@@ -283,7 +294,9 @@ def main() -> None:
     snapshot_visitor = py_trees.visitors.SnapshotVisitor()
     behaviour_tree.visitors.append(snapshot_visitor)
     print(py_trees.display.unicode_tree(root=root, show_status=True))
-    for i in range(1, 15):
+    tree_success = False
+    i = 0
+    while not tree_success:
         try:
             time.sleep(1.0)
             print("\n--------- Tick {0} ---------\n".format(i))
@@ -308,6 +321,9 @@ def main() -> None:
             # ascii_tree = py_trees.display.ascii_tree(
             #     behaviour_tree.root)
             # print(ascii_tree)
+            if behaviour_tree.root.status == py_trees.common.Status.SUCCESS:
+                tree_success = True
+            i += 1
         except KeyboardInterrupt:
             break
     print("\n")
