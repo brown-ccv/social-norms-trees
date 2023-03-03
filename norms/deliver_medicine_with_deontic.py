@@ -178,10 +178,10 @@ def create_root() -> py_trees.behaviour.Behaviour:
                     variable="isCabinetUnlocked", value=True, operator=operator.eq
                 ),
             )
-    wait_cabinet = wait("Wait for at most 3 Ticks", 3)
-    # supervisor = py_trees.behaviours.Success(name="Call Supervisor for Virtual Unlock")
-    # unlock.add_children([unlock_cabinet, wait_cabinet, supervisor])
-    unlock.add_children([unlock_cabinet, wait_cabinet])
+
+    wait_cabinet =  py_trees.behaviours.Running(name="Wait")
+    supervisor = py_trees.behaviours.Success(name="Call Supervisor for Virtual Unlock")
+    unlock.add_children([unlock_cabinet, wait_cabinet, supervisor])
 
 
     go_to_elevator = py_trees.behaviours.Success(name="Go to Elevator")
@@ -203,10 +203,10 @@ def create_root() -> py_trees.behaviour.Behaviour:
                     variable="isElevatorOpen", value=True, operator=operator.eq
                 ),
             )
-    wait_for_open_elevator = wait("Wait for at most 5 Ticks", 5)
-    # supervisor = py_trees.behaviours.Success(name="Call Supervisor to Virtually Call Elevator")
-    # is_elevator_open.add_children([elevator_open, wait_for_open_elevator, supervisor])
-    is_elevator_open.add_children([elevator_open, wait_for_open_elevator])
+    wait_for_open_elevator = py_trees.behaviours.Running(name="Wait")
+    supervisor = py_trees.behaviours.Success(name="Call Supervisor to Virtually Call Elevator")
+    is_elevator_open.add_children([elevator_open, wait_for_open_elevator, supervisor])
+    # is_elevator_open.add_children([elevator_open, wait_for_open_elevator])
 
     elevator_space = py_trees.behaviours.CheckBlackboardVariableValue(
                 name=">= 9ft^2 of space in the Elevator?",
@@ -304,6 +304,7 @@ def main() -> None:
     print(py_trees.display.unicode_tree(root=root, show_status=True))
     tree_success = False
     i = 0
+    time.sleep(1)
     while not tree_success:
         try:
             time.sleep(0.5)
@@ -347,6 +348,24 @@ def main() -> None:
                     # supervisor = py_trees.behaviours.Success(name="Call Supervisor to " + node.name)
                     supervisor = py_trees.behaviours.Success(name="Call Supervisor for help")
                     node.add_children([supervisor])
+            elif behaviour_tree.root.status == py_trees.common.Status.RUNNING:
+                reduceDeontic = input("Should the robot reduce the deontic force of the current running task? (1 for Yes 0 for No)\n")
+                if reduceDeontic == "1":
+                    node = behaviour_tree.root
+                    found = False
+                    while not found:
+                        for n in node.children:
+                            if n.status == py_trees.common.Status.RUNNING:
+                                node = n
+                                break
+                        if type(node) == py_trees.behaviours.Running:
+                            found = True
+                    # supervisor = py_trees.behaviours.Success(name="Call Supervisor to " + node.name)
+                    parent = node.parent
+                    parent.remove_child(node)
+                    # supervisor = py_trees.behaviours.Success(name="Call Supervisor for help")
+                    parent.add_children([node])
+
                     
 
             i += 1
