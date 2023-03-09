@@ -349,8 +349,8 @@ def main() -> None:
                     supervisor = py_trees.behaviours.Success(name="Call Supervisor for help")
                     node.add_children([supervisor])
             elif behaviour_tree.root.status == py_trees.common.Status.RUNNING:
-                reduceDeontic = input("Should the robot reduce the deontic force of the current running task to be less than the next task? (1 for Yes 0 for No)\n")
-                if reduceDeontic == "1":
+                reorder = input("Would you like to reorder the children of the Selector that is running? (1 for Yes 0 for No)\n")
+                if reorder == "1":
                     node = behaviour_tree.root
                     found = False
                     while not found:
@@ -362,9 +362,31 @@ def main() -> None:
                             found = True
                     # supervisor = py_trees.behaviours.Success(name="Call Supervisor to " + node.name)
                     parent = node.parent
-                    parent.remove_child(node)
-                    # supervisor = py_trees.behaviours.Success(name="Call Supervisor for help")
-                    parent.add_children([node])
+                    stored_children = []
+                    for i in range(0, len(parent.children)):
+                        child = parent.children[0]
+                        print("Node", i, "-", child.name)
+                        stored_children.append(child)
+                        parent.remove_child(child)
+                    print("\n")
+                    stored = []
+                    for i in range(0, len(stored_children)):
+                        valid_input = False
+                        while(not valid_input):
+                            user_input = input("Which node (input number e.g. 0) would you like in position " + str(i) + "? ")
+                            try:
+                                node_number = int(user_input)
+                            except ValueError:
+                                print("Please enter an integer equal to one of the node numbers.")
+                                continue
+                            if node_number >= len(stored_children) or node_number < 0:
+                                print("Please enter an integer equal to one of the node numbers.")
+                            elif node_number in stored:
+                                print("Please enter a node that hasn't been used already.")
+                            else:
+                                stored.append(node_number)
+                                valid_input = True
+                                parent.add_child(stored_children[node_number])
 
                     
 
