@@ -77,7 +77,7 @@ def description() -> str:
     if py_trees.console.has_colours:
         banner_line = console.green + "*" * 79 + "\n" + console.reset
         s = banner_line
-        s += console.bold_white + "Selectors".center(79) + "\n" + console.reset
+        s += console.bold_white + "Norms".center(79) + "\n" + console.reset
         s += banner_line
         s += "\n"
         s += content
@@ -204,8 +204,9 @@ def create_root() -> py_trees.behaviour.Behaviour:
                 ),
             )
     wait_for_open_elevator = py_trees.behaviours.Running(name="Wait")
+    button_again = py_trees.behaviours.Running(name="Press button again")
     supervisor = py_trees.behaviours.Success(name="Call Supervisor to Virtually Call Elevator")
-    is_elevator_open.add_children([elevator_open, wait_for_open_elevator, supervisor])
+    is_elevator_open.add_children([elevator_open, wait_for_open_elevator, button_again, supervisor, ])
     # is_elevator_open.add_children([elevator_open, wait_for_open_elevator])
 
     elevator_space = py_trees.behaviours.CheckBlackboardVariableValue(
