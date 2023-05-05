@@ -51,6 +51,10 @@ blackboard.elevatorHasSpace = False
 blackboard.canEnterElevator = False
 blackboard.isElevatorOn7th = False
 blackboard.canLeaveElevator = False
+# print(blackboard)
+# exit()
+
+
 
 def description() -> str:
     """
