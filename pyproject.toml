@@ -1,5 +1,5 @@
 [project]
-name = "social_norms_trees"  # Required
+name = "social-norms-trees"  # Required
 dynamic = ["version"]
 
 # This is a one-line description or tagline of what your project does. This
