@@ -136,7 +136,9 @@ def main_curses(stdscr, render=render):
         tick()
 
 
-main_debug = partial(main_curses, render=pformat)
+main_debug = partial(
+    main_curses, render=lambda world: f"{render(world)}\n{pformat(world)}"
+)
 
 if __name__ == "__main__":
     curses.wrapper(main_debug)
