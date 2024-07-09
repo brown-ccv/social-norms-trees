@@ -29,6 +29,8 @@ def ability(f):
             return f(e, *args, **kwargs)
         if hasattr(e, "attributes"):
             e.attributes = [inner(at, *args, **kwargs) for at in e.attributes]
+        if hasattr(e, "entities"):
+            e.attributes = [inner(e, *args, **kwargs) for e in e.entities]
     return inner
 
 @dataclass
