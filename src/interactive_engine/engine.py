@@ -1,7 +1,7 @@
 import curses
 import inspect
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import partial, wraps
 from pprint import pformat
 from time import sleep
@@ -16,7 +16,7 @@ class World:
 
 @dataclass
 class Entity:
-    name: str
+    name: str = None
     attributes: List[Union["Entity", dataclass]] = field(default_factory=list)
     abilities: List[Any] = field(default_factory=list)
 
@@ -70,6 +70,36 @@ def move_minus_one(position: Position):
 def random_walk(position: Position):
     position = random.choice([move_minus_one, move_plus_one])(position)
     return position
+
+
+@dataclass
+class Lock:
+    """A lock.
+
+    Examples:
+        We can try to unlock it with the wrong secret – it doesn't work.
+        >>> unlock(Lock(secret=4567, locked=True), secret=1234)
+        Lock(secret=4567, locked=True)
+
+        ... but if we use the right secret, it will unlock
+        >>> unlock(Lock(secret=1234, locked=True), secret=1234)
+        Lock(secret=1234, locked=False)
+    """
+
+    secret: Any = field(default="1234")
+    locked: bool = field(default=False)
+
+
+@dataclass
+class Key:
+    secret: Any = field(default="1234")
+
+
+@ability
+def unlock(lock: Lock, secret="1234"):
+    if secret == lock.secret:
+        lock = replace(lock, locked=False)
+    return lock
 
 
 T = TypeVar("T")
