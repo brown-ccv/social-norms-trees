@@ -74,13 +74,14 @@ def render(gameworld: World) -> str:
 def init_game():
     gameworld = World("_" * 15, [])
     robot_position = Position(0, gameworld)
-    robot = Entity("robot", "R", attributes=[robot_position], abilities=[random_walk])
+    robot = Entity("robot", "R", attributes=[robot_position, Position(2, gameworld)], abilities=[
+        random_walk])
     gameworld.entities.extend([
         robot,
         Entity("cabinet", "C", attributes=[Position(5, gameworld)])
     ])
     def tick():
-        random_walk(robot_position)
+        random_walk(robot)
         sleep(0.1)
     return gameworld, tick
 
