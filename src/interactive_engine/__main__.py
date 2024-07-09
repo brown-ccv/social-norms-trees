@@ -56,37 +56,40 @@ def random_walk(position: Position):
     position = random.choice([move_minus_one, move_plus_one])(position)
     return position
 
+def get_attributes(entity: Entity, kind: Any):
+    return filter(lambda a: isinstance(a, kind), entity.attributes)
+
 
 def render(gameworld: World) -> str:
-    world = gameworld
-
-    for entity in world.entities:
-        world_before = world[:entity.position]
-        world_after = world[entity.position+len(entity.representation):]
-        world = world_before + entity.representation + world_after
-    return world
+    landscape = gameworld.landscape
+    for entity in gameworld.entities:
+        for p in get_attributes(entity, Position):
+            world_before = landscape[:p.position]
+            world_after = landscape[p.position+len(entity.representation):]
+            landscape = world_before + entity.representation + world_after
+    return landscape
 
 def init_game():
-    gameworld = World("_" * 10, [])
+    gameworld = World("_" * 15, [])
     robot_position = Position(0, gameworld)
     robot = Entity("robot", "R", attributes=[robot_position], abilities=[random_walk])
     gameworld.entities.extend([
         robot,
-        Entity("cabinet", "C")
+        Entity("cabinet", "C", attributes=[Position(5, gameworld)])
     ])
     def tick():
         random_walk(robot_position)
-        sleep(0.2)
+        sleep(0.1)
     return gameworld, tick
 
 
-def main_curses(stdscr):
+def main_curses(stdscr, render=render):
     gameworld, tick = init_game()
     stdscr.clear()
     while True:
         tick()
         stdscr.clear()
-        stdscr.addstr(pformat(gameworld))
+        stdscr.addstr(render(gameworld))
         stdscr.refresh()
 
 if __name__ == "__main__":
