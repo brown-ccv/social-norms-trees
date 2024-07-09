@@ -33,7 +33,8 @@ def ability(f):
         if hasattr(e, "attributes"):
             e.attributes = [inner(at, *args, **kwargs) for at in e.attributes]
         if hasattr(e, "entities"):
-            e.attributes = [inner(e, *args, **kwargs) for e in e.entities]
+            e.entities = [inner(e, *args, **kwargs) for e in e.entities]
+        return e
 
     return inner
 
