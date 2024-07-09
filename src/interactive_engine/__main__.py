@@ -2,6 +2,7 @@ import curses
 import inspect
 import random
 from dataclasses import dataclass, field
+from functools import partial, wraps
 from pprint import pprint, pformat
 from time import sleep
 from typing import Sequence, List, Any, Optional, Union, TypeVar, Type
@@ -26,6 +27,7 @@ def ability(f):
         iter(inspect.signature(f).parameters.values())
     ).annotation
 
+    @wraps(f)
     def inner(e, *args, **kwargs):
         if isinstance(e, first_argument_type):
             e = f(e, *args, **kwargs)
