@@ -74,9 +74,9 @@ def get_abilities(entity: Entity):
 
     """
     if hasattr(entity, "abilities"):
-        for ability in entity.abilities:
-            yield ability
+        for _ability in entity.abilities:
+            yield _ability
     if hasattr(entity, "attributes"):
         for attribute in entity.attributes:
-            for ability in get_abilities(attribute):
-                yield ability
+            for _ability in get_abilities(attribute):
+                yield _ability
