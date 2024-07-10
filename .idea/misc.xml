@@ -5,7 +5,7 @@
     <option name="enabledOnSave" value="true" />
     <option name="executionMode" value="BINARY" />
     <option name="pathToExecutable" value="/opt/homebrew/bin/black" />
-    <option name="sdkName" value="Python 3.11 (social-norms-trees)" />
+    <option name="sdkName" value="Python 3.12 (social-norms-trees)" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
