@@ -90,8 +90,7 @@ dependencies = [ # Optional
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = ["check-manifest"]
-test = ["coverage"]
+dev = []
 
 # List URLs that are relevant to your project
 #
@@ -119,3 +118,14 @@ build-backend = "hatchling.build"
 
 [tool.hatch]
 version.source = "vcs"
+
+[tool.hatch.envs.default]
+type = "virtual"
+path = ".venv"
+
+[tool.hatch.envs.hatch-test]
+extra-args = [
+  "src/",
+  "--doctest-modules"
+]
+
