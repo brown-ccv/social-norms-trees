@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, replace
-from functools import partial
+from functools import partial, wraps
 from typing import Any
 
 from interactive_engine.engine import Entity, ability
@@ -31,7 +31,7 @@ def make_key(secret="1234"):
         >>> k.abilities[0](l)
         Lock(secret=1234, locked=False)
     """
-    key = Entity(abilities=[partial(unlock, secret=secret)])
+    key = Entity(name="key", abilities=[partial(unlock, secret=secret)])
     return key
 
 
