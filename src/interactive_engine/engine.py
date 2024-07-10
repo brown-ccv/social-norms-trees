@@ -90,9 +90,16 @@ class Lock:
     locked: bool = field(default=False)
 
 
-@dataclass
-class Key:
-    secret: Any = field(default="1234")
+def make_key(secret="1234"):
+    """
+    Examples:
+        >>> k = make_key(secret=1234)
+        >>> l = Lock(secret=1234, locked=True)
+        >>> k.abilities[0](l)
+        Lock(secret=1234, locked=False)
+    """
+    key = Entity(abilities=[partial(unlock, secret=secret)])
+    return key
 
 
 @ability
