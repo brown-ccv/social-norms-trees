@@ -4,20 +4,19 @@ from time import sleep
 from typing import List, Optional
 
 from interactive_engine.engine import Entity, get_attributes, ability
+from interactive_engine.world import World
 
 
 @dataclass
-class World:
+class TextWorld(World):
     landscape: str
-    entities: List["Entity"]
-
 
 @dataclass
 class TextAppearance:
     representation: Optional[str]
 
 
-def render(gameworld: World) -> str:
+def render(gameworld: TextWorld) -> str:
     landscape = gameworld.landscape
     for entity in gameworld.entities:
         try:
@@ -34,7 +33,7 @@ def render(gameworld: World) -> str:
 @dataclass
 class Position:
     position: int
-    world: World
+    world: TextWorld
 
 
 @ability
@@ -64,7 +63,7 @@ def random_walk(position: Position):
 
 
 def init_game():
-    gameworld = World("_" * 15, [])
+    gameworld = TextWorld("_" * 15, [])
     robot = Entity(
         name="robot",
         attributes=[
