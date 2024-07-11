@@ -12,19 +12,27 @@ _logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
-def worker(id, report):
-    while True:
-        item = tasks.get()
-        _logger.debug(f"{id=:2} start  {item=} {time.strftime('%X')}")
-        match item:
-            case Task(kind="move to", value=place):
-                _logger.debug(f"{id=:2} moving to {place=}")
-                time.sleep(random.choice([0.1, 0.1, 1, 2, 3]))
-            case Task(kind="announce", value=message):
-                time.sleep(random.choice([0.1, 0.1, 1, 2, 3]))
-                report(f"{id=:2}: '{message}'")
-        _logger.debug(f"{id=:2} finish {item=} {time.strftime('%X')}")
-        tasks.task_done()
+class Robot:
+    def __init__(self, id, report):
+        self.queue = queue.Queue()
+        self.id = id
+        self.report = report
+
+    def __call__(self, *args, **kwargs):
+        tasks = self.queue
+        report = self.report
+        while True:
+            item = tasks.get()
+            _logger.debug(f"{self.id} start {item=} {time.strftime('%X')}")
+            match item:
+                case Task(kind="move to", value=place):
+                    _logger.debug(f"{self.id} moving to {place=}")
+                    time.sleep(random.choice([0.1, 0.1, 1, 2, 3]))
+                case Task(kind="announce", value=message):
+                    time.sleep(random.choice([0.1, 0.1, 1, 2, 3]))
+                    report(f"{self.id}: '{message}'")
+            _logger.debug(f"{self.id} finish {item=} {time.strftime('%X')}")
+            tasks.task_done()
 
 
 def make_message_queue_and_reporter():
@@ -46,10 +54,14 @@ _, reporter, reporter_callback = make_message_queue_and_reporter()
 threading.Thread(target=reporter, daemon=True).start()
 
 # Turn-on the worker thread.
-for i in range(1):
-    threading.Thread(
-        target=worker, daemon=True, kwargs=dict(id=i, report=reporter_callback)
-    ).start()
+robot = Robot(
+    id="robbie",
+    report=reporter_callback,
+)
+threading.Thread(
+    target=robot,
+    daemon=True,
+).start()
 
 
 @dataclass
@@ -59,14 +71,14 @@ class Task:
 
 
 # Send thirty task requests to the worker.
-tasks.put(Task("move to", "A"))
-tasks.put(Task("move to", "B"))
-tasks.put(Task("move to", "C"))
-tasks.put(Task("announce", "I'm starting again"))
-tasks.put(Task("move to", "A"))
+robot.queue.put(Task("move to", "A"))
+robot.queue.put(Task("move to", "B"))
+robot.queue.put(Task("move to", "C"))
+robot.queue.put(Task("announce", "I'm starting again"))
+robot.queue.put(Task("move to", "A"))
 
 # Block until all tasks are done.
-tasks.join()
+robot.queue.join()
 
 
 print("\nDone")
