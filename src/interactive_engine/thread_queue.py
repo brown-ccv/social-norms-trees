@@ -6,29 +6,39 @@ import time
 tasks = queue.Queue()
 
 
-def worker(id, message_queue):
+def worker(id, report):
     while True:
         item = tasks.get()
-        message_queue.put(f"{id=:2} start  {item=:2} {time.strftime('%X')}")
+        report(f"{id=:2} start  {item=:2} {time.strftime('%X')}")
         time.sleep(random.choice([0.1, 0.1, 1, 2, 3]))
-        message_queue.put(f"{id=:2} finish {item=:2} {time.strftime('%X')}")
+        report(f"{id=:2} finish {item=:2} {time.strftime('%X')}")
         tasks.task_done()
 
 
-messages = queue.Queue()
+def make_message_queue_and_reporter():
+    messages = queue.Queue()
+
+    def reporter():
+        while True:
+            message = messages.get()
+            print(message)
+            messages.task_done()
+
+    def reporter_callback(message):
+        messages.put(message)
+
+    return messages, reporter, reporter_callback
 
 
-def reporter():
-    while True:
-        message = messages.get()
-        print(message)
-        messages.task_done()
-
+_, reporter, reporter_callback = make_message_queue_and_reporter()
+threading.Thread(target=reporter, daemon=True).start()
 
 # Turn-on the worker thread.
 for i in range(10):
-    threading.Thread(target=worker, daemon=True, args=(i, messages)).start()
-threading.Thread(target=reporter, daemon=True).start()
+    threading.Thread(
+        target=worker, daemon=True, kwargs=dict(id=i, report=reporter_callback)
+    ).start()
+
 
 # Send thirty task requests to the worker.
 for item in range(100):
@@ -38,4 +48,4 @@ for item in range(100):
 tasks.join()
 
 
-print("\n\nAll work completed")
+print("\nDone")
