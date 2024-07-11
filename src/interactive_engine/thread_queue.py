@@ -16,18 +16,18 @@ def worker(id, report):
 
 
 def make_message_queue_and_reporter():
-    messages = queue.Queue()
+    message_queue = queue.Queue()
 
     def reporter():
         while True:
-            message = messages.get()
+            message = message_queue.get()
             print(message)
-            messages.task_done()
+            message_queue.task_done()
 
     def reporter_callback(message):
-        messages.put(message)
+        message_queue.put(message)
 
-    return messages, reporter, reporter_callback
+    return message_queue, reporter, reporter_callback
 
 
 _, reporter, reporter_callback = make_message_queue_and_reporter()
