@@ -1,21 +1,27 @@
 from dataclasses import replace, dataclass, field
-from typing import TypeVar, List, Union, Optional, Set, Iterable
+from typing import TypeVar, List, Union, Optional, Set, Iterable, Type
 
 from interactive_engine.world import World
 
-W = TypeVar("W", bound=World)
 
 EntityID = int
 
 
 @dataclass
 class Entity:
+    """A thing in a world"""
+
     id: Optional[EntityID] = field(compare=False, default=None)
 
 
 @dataclass
 class World:
-    entities: List[Union["Entity", EntityID]] = field(default_factory=list)
+    """A container for a whole world of entities"""
+
+    entities: List[Union[Entity, EntityID]] = field(default_factory=list)
+
+
+W = TypeVar("W", bound=World)
 
 
 def create(entity: Entity, world: W) -> W:
@@ -85,7 +91,23 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
 
 @dataclass
 class Tracker(Entity):
+    """An entity which tracks links with other entities."""
+
     entities: Set[EntityID] = field(default_factory=set, compare=False)
+
+
+@dataclass
+class Location(Tracker):
+    """A place in the world where entities can be."""
+
+    name: str = ""
+
+
+@dataclass
+class Agent(Entity):
+    """An Entity with a name and some behavior."""
+
+    name: str = ""
 
 
 def replace_in_list(list_, i, thing):
@@ -98,7 +120,12 @@ def update_entity_list(entity: Entity, entities: List[Entity]):
     return new_entity_list
 
 
-def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
+T = TypeVar("T", bound=Tracker)
+
+
+def move(
+    entity_id: EntityID, location_id: EntityID, world: W, kind: Type[T] = Tracker
+) -> W:
     """Move an Entity in a world.
 
     Examples:
@@ -150,6 +177,8 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
                         Entity(id=3)])
 
 
+        If we have a series of trackers, the entity can move through them, existing only in one
+        at each time:
         >>> world = create(Entity(),
         ...         create(Tracker(),
         ...         create(Tracker(),
@@ -190,6 +219,38 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
                         Tracker(id=3, entities={4}),
                         Entity(id=4)])
 
+        If there are multiple kinds of trackers, we can specify a single type to be affected:
+        >>> @dataclass
+        ... class Faction(Tracker):
+        ...     name: str = ""
+        >>> world = World()
+        >>> entities = [Location(name="north"),
+        ...             Location(name="south"),
+        ...             Faction(name="blue"),
+        ...             Faction(name="green"),
+        ...             Entity()]
+        >>> for e in entities:
+        ...     world = create(e, world)
+
+
+        In this world, the entity 4 is in faction 2, and location 0:
+        >>> world = move(4, 2, world, kind=Faction)  # doctest: +NORMALIZE_WHITESPACE
+        >>> world = move(4, 0, world, kind=Location)
+        >>> world  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities={4}, name='north'),
+                        Location(id=1, entities=set(), name='south'),
+                        Faction(id=2, entities={4}, name='blue'),
+                        Faction(id=3, entities=set(), name='green'),
+                        Entity(id=4)])
+
+        Now when we move faction (from 2) to 3, the location isn't changed:
+        >>> move(4, 3, world, kind=Faction)  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities={4}, name='north'),
+                        Location(id=1, entities=set(), name='south'),
+                        Faction(id=2, entities=set(), name='blue'),
+                        Faction(id=3, entities={4}, name='green'),
+                        Entity(id=4)])
+
     """
     assert isinstance(entity_id, EntityID)
     assert isinstance(location_id, EntityID)
@@ -197,9 +258,9 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
     updated_entities = []
 
     # Remove the old entity_id from the old location (if there is one)
-    old_locations = locate(entity_id, world)
+    old_locations = locate(entity_id, world, kind=kind)
     for old_location in old_locations:
-        assert isinstance(old_location, Tracker)
+        assert isinstance(old_location, kind)
         updated_old_location = replace(
             old_location, entities=old_location.entities - {entity_id}
         )
@@ -208,7 +269,7 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
     # Add the entity_id to the new Tracker
     location = world.entities[location_id]
 
-    assert isinstance(location, Tracker)
+    assert isinstance(location, kind)
     updated_new_location = replace(location, entities=location.entities | {entity_id})
     updated_entities.append(updated_new_location)
 
@@ -220,7 +281,7 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
     return new_world
 
 
-def locate(entity_id: EntityID, world: W) -> Iterable[Tracker]:
+def locate(entity_id: EntityID, world: W, kind: Type[T] = Tracker) -> Iterable[T]:
     """Locate an Entity in a world.
 
     Examples:
@@ -229,9 +290,11 @@ def locate(entity_id: EntityID, world: W) -> Iterable[Tracker]:
 
         >>> list(locate(1, move(1, 0, create(Entity(), create(Tracker(), World())))))
         [Tracker(id=0, entities={1})]
+
+        >>>
     """
     locations = filter(
-        lambda e: isinstance(e, Tracker) and entity_id in e.entities, world.entities
+        lambda e: isinstance(e, kind) and entity_id in e.entities, world.entities
     )
     return locations
 
@@ -240,14 +303,6 @@ if __name__ == "__main__":
     from pprint import pprint
     import random
     import time
-
-    @dataclass
-    class Location(Tracker):
-        name: str = ""
-
-    @dataclass
-    class Agent(Entity):
-        name: str = ""
 
     world = World()
     for entity in [
