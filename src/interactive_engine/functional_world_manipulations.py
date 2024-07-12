@@ -1,6 +1,6 @@
 from dataclasses import replace, dataclass, field
 from itertools import accumulate
-from typing import TypeVar, List, Union, Optional
+from typing import TypeVar, List, Union, Optional, Set, Iterable
 
 from interactive_engine.world import World
 
@@ -86,87 +86,151 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
 
 
 @dataclass
-class Location:
-    name: str
-    entities: List[Entity] = field(default_factory=list)
+class Location(Entity):
+    entities: Set[EntityID] = field(default_factory=set)
 
 
-def locate(entity: Entity, world: W) -> List[Location]:
+def replace_in_list(list_, i, thing):
+    new_list = list_[:i] + [thing] + list_[i + 1 :]
+    return new_list
+
+
+def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
+    """Move an Entity in a world.
+
+    Examples:
+        >>> create(Location(), World())
+        World(entities=[Location(id=0, entities=set())])
+
+        >>> world = create(Entity(), create(Location(), World()))
+        >>> world  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities=set()),
+                        Entity(id=1, entities=[])])
+
+        We can move an entity by its ID to a new location
+        >>> move(1, 0, world)  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities={1}),
+                        Entity(id=1, entities=[])])
+
+        The function is idempotent
+        >>> move(1, 0, move(1, 0, world))  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities={1}),
+                        Entity(id=1, entities=[])])
+
+        `world` is unchanged.
+        >>> world  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities=set()),
+                        Entity(id=1, entities=[])])
+
+
+        >>> world = create(Entity(),
+        ...         create(Entity(),
+        ...         create(Location(),
+        ...         create(Location(),
+        ...                           World()))))
+        >>> world  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities=set()),
+                        Location(id=1, entities=set()),
+                        Entity(id=2, entities=[]),
+                        Entity(id=3, entities=[])])
+
+        >>> move(3, 1, move(2, 0, world))  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities={2}),
+                        Location(id=1, entities={3}),
+                        Entity(id=2, entities=[]),
+                        Entity(id=3, entities=[])])
+
+        >>> move(2, 1, move(2, 0, world))  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities=set()),
+                        Location(id=1, entities={2}),
+                        Entity(id=2, entities=[]),
+                        Entity(id=3, entities=[])])
+
+
+        >>> world = create(Entity(),
+        ...         create(Location(),
+        ...         create(Location(),
+        ...         create(Location(),
+        ...         create(Location(),
+        ...                           World())))))
+        >>> world  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities=set()),
+                        Location(id=1, entities=set()),
+                        Location(id=2, entities=set()),
+                        Location(id=3, entities=set()),
+                        Entity(id=4, entities=[])])
+        >>> move(4, 0, world)  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities={4}),
+                        Location(id=1, entities=set()),
+                        Location(id=2, entities=set()),
+                        Location(id=3, entities=set()),
+                        Entity(id=4, entities=[])])
+
+        >>> move(4, 1, move(4, 1, world))  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities=set()),
+                        Location(id=1, entities={4}),
+                        Location(id=2, entities=set()),
+                        Location(id=3, entities=set()),
+                        Entity(id=4, entities=[])])
+
+        >>> move(4, 2, world)  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities=set()),
+                        Location(id=1, entities=set()),
+                        Location(id=2, entities={4}),
+                        Location(id=3, entities=set()),
+                        Entity(id=4, entities=[])])
+
+        >>> move(4, 3, move(4, 2, move(4, 1, move(4, 0, world))))  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities=set()),
+                        Location(id=1, entities=set()),
+                        Location(id=2, entities=set()),
+                        Location(id=3, entities={4}),
+                        Entity(id=4, entities=[])])
+
+    """
+    updated_entities = []
+
+    # Remove the old entity_id from the old location (if there is one)
+    old_locations = locate(entity_id, world)
+    for old_location in old_locations:
+        assert isinstance(old_location, Location)
+        updated_old_location = replace(
+            old_location, entities=old_location.entities - {entity_id}
+        )
+        updated_entities.append(updated_old_location)
+
+    # Add the entity_id to the new Location
+    location = world.entities[location_id]
+
+    assert isinstance(location, Location)
+    updated_new_location = replace(location, entities=location.entities | {entity_id})
+    updated_entities.append(updated_new_location)
+
+    new_world_entities = world.entities
+    for updated_entity in updated_entities:
+        new_world_entities = replace_in_list(
+            new_world_entities, updated_entity.id, updated_entity
+        )
+
+    new_world = replace(world, entities=new_world_entities)
+    return new_world
+
+
+def locate(entity_id: EntityID, world: W) -> Iterable[Location]:
     """Locate an Entity in a world.
 
     Examples:
-        >>> locate(Entity(), World())
+        >>> list(locate(1, create(Entity(), create(Location(), World()))))
         []
-        >>> w = World()
 
-        >>> locate(Entity(attributes=[Location("")]), World())
+        >>> list(locate(1, move(1, 0, create(Entity(), create(Location(), World())))))
+        [Location(id=0, entities={1})]
     """
-    location = list(
-        filter(
-            lambda a: isinstance(a, Location) and a.world == world, entity.attributes
-        )
+    locations = filter(
+        lambda e: isinstance(e, Location) and entity_id in e.entities, world.entities
     )
-    return location
-
-
-def move_to(entity: Entity, world: W, location: Location) -> W:
-    """Move an Entity in a world.
-
-    Examples:
-        >>> e = Entity()
-        >>> world = World(entities=[e])
-        >>> world
-        World(entities=[Entity(name=None, attributes=[], abilities=[])])
-
-        >>> l = Location("here", world)
-        >>> move_to(e, world, l)
-        World(entities=[Entity(name=None, attributes=[Location(name='here', world=World(entities=[Entity(name=None, attributes=[], abilities=[])]))], abilities=[])])
-
-    """
-    filtered_attributes = filter(
-        lambda a: not (isinstance(a, Location)), entity.attributes
-    )
-    new_entity = replace(entity, attributes=[location] + list(filtered_attributes))
-    new_entities = [new_entity] + list(filter(lambda e: e != entity, world.entities))
-    new_world = replace(world, entities=new_entities)
-    return new_world
-
-
-def move_to_unrecursive(
-    entity: Entity,
-    location: Location,
-    world: W,
-) -> W:
-    """Move an Entity in a world.
-
-    Examples:
-        >>> l = Location("here")
-        >>> world = create(l, World())
-        >>> world
-        World(entities=[Location(name='here', entities=[])])
-
-        >>> e = Entity()
-        >>> create(e, world)  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
-        World(entities=[Location(name='here', entities=[]), Entity(...)])
-
-        >>> move_to_unrecursive(e, l, create(e, world)) # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
-        World(entities=[Location(name='here', entities=[Entity(...)])])
-
-    """
-    new_location = replace(location, entities=location.entities + [entity])
-
-    filtered_attributes = filter(
-        lambda a: not (isinstance(a, Location)), entity.attributes
-    )
-
-    new_entity = replace(entity, attributes=[location] + list(filtered_attributes))
-    new_entities = [new_entity] + list(filter(lambda e: e != entity, world.entities))
-    new_world = replace(world, entities=new_entities)
-    return new_world
+    return locations
 
 
 if __name__ == "__main__":
-    world = World()
-    print(world)
-    print(create(entity=Entity(), world=world))
-    print(destroy(Entity(), create(Entity(), world)))
+    pass
