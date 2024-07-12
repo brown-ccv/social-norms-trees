@@ -1,5 +1,4 @@
 from dataclasses import replace, dataclass, field
-from itertools import accumulate
 from typing import TypeVar, List, Union, Optional, Set, Iterable
 
 from interactive_engine.world import World
@@ -12,7 +11,6 @@ EntityID = int
 @dataclass
 class Entity:
     id: Optional[EntityID] = field(compare=False, default=None)
-    entities: List[Union["Entity", EntityID]] = field(default_factory=list)
 
 
 @dataclass
@@ -28,11 +26,11 @@ def create(entity: Entity, world: W) -> W:
         World(entities=[])
 
         >>> create(Entity(), world)
-        World(entities=[Entity(id=0, entities=[])])
+        World(entities=[Entity(id=0)])
 
         >>> create(Entity(), create(Entity(), world))
         ... # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Entity(id=0, entities=[]), Entity(id=1, entities=[])])
+        World(entities=[Entity(id=0), Entity(id=1)])
     """
     next_id = EntityID(len(world.entities))
     new_entity = replace(entity, id=next_id)
@@ -46,13 +44,13 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
     Examples:
         >>> world = create(Entity(), create(Entity(), World()))
         >>> world
-        World(entities=[Entity(id=0, entities=[]), Entity(id=1, entities=[])])
+        World(entities=[Entity(id=0), Entity(id=1)])
 
         >>> destroy(0, world)
-        World(entities=[None, Entity(id=1, entities=[])])
+        World(entities=[None, Entity(id=1)])
 
         >>> destroy(world.entities[1], world)
-        World(entities=[Entity(id=0, entities=[]), None])
+        World(entities=[Entity(id=0), None])
 
         >>> destroy(Entity(), World())
         World(entities=[])
@@ -86,7 +84,7 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
 
 
 @dataclass
-class Location(Entity):
+class Tracker(Entity):
     entities: Set[EntityID] = field(default_factory=set)
 
 
@@ -104,93 +102,93 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
     """Move an Entity in a world.
 
     Examples:
-        >>> create(Location(), World())
-        World(entities=[Location(id=0, entities=set())])
+        >>> create(Tracker(), World())
+        World(entities=[Tracker(id=0, entities=set())])
 
-        >>> world = create(Entity(), create(Location(), World()))
+        >>> world = create(Entity(), create(Tracker(), World()))
         >>> world  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities=set()),
-                        Entity(id=1, entities=[])])
+        World(entities=[Tracker(id=0, entities=set()),
+                        Entity(id=1)])
 
         We can move an entity by its ID to a new location
         >>> move(1, 0, world)  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities={1}),
-                        Entity(id=1, entities=[])])
+        World(entities=[Tracker(id=0, entities={1}),
+                        Entity(id=1)])
 
         The function is idempotent
         >>> move(1, 0, move(1, 0, world))  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities={1}),
-                        Entity(id=1, entities=[])])
+        World(entities=[Tracker(id=0, entities={1}),
+                        Entity(id=1)])
 
         `world` is unchanged.
         >>> world  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities=set()),
-                        Entity(id=1, entities=[])])
+        World(entities=[Tracker(id=0, entities=set()),
+                        Entity(id=1)])
 
 
         >>> world = create(Entity(),
         ...         create(Entity(),
-        ...         create(Location(),
-        ...         create(Location(),
+        ...         create(Tracker(),
+        ...         create(Tracker(),
         ...                           World()))))
         >>> world  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities=set()),
-                        Location(id=1, entities=set()),
-                        Entity(id=2, entities=[]),
-                        Entity(id=3, entities=[])])
+        World(entities=[Tracker(id=0, entities=set()),
+                        Tracker(id=1, entities=set()),
+                        Entity(id=2),
+                        Entity(id=3)])
 
         >>> move(3, 1, move(2, 0, world))  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities={2}),
-                        Location(id=1, entities={3}),
-                        Entity(id=2, entities=[]),
-                        Entity(id=3, entities=[])])
+        World(entities=[Tracker(id=0, entities={2}),
+                        Tracker(id=1, entities={3}),
+                        Entity(id=2),
+                        Entity(id=3)])
 
         >>> move(2, 1, move(2, 0, world))  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities=set()),
-                        Location(id=1, entities={2}),
-                        Entity(id=2, entities=[]),
-                        Entity(id=3, entities=[])])
+        World(entities=[Tracker(id=0, entities=set()),
+                        Tracker(id=1, entities={2}),
+                        Entity(id=2),
+                        Entity(id=3)])
 
 
         >>> world = create(Entity(),
-        ...         create(Location(),
-        ...         create(Location(),
-        ...         create(Location(),
-        ...         create(Location(),
+        ...         create(Tracker(),
+        ...         create(Tracker(),
+        ...         create(Tracker(),
+        ...         create(Tracker(),
         ...                           World())))))
         >>> world  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities=set()),
-                        Location(id=1, entities=set()),
-                        Location(id=2, entities=set()),
-                        Location(id=3, entities=set()),
-                        Entity(id=4, entities=[])])
+        World(entities=[Tracker(id=0, entities=set()),
+                        Tracker(id=1, entities=set()),
+                        Tracker(id=2, entities=set()),
+                        Tracker(id=3, entities=set()),
+                        Entity(id=4)])
         >>> move(4, 0, world)  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities={4}),
-                        Location(id=1, entities=set()),
-                        Location(id=2, entities=set()),
-                        Location(id=3, entities=set()),
-                        Entity(id=4, entities=[])])
+        World(entities=[Tracker(id=0, entities={4}),
+                        Tracker(id=1, entities=set()),
+                        Tracker(id=2, entities=set()),
+                        Tracker(id=3, entities=set()),
+                        Entity(id=4)])
 
         >>> move(4, 1, move(4, 1, world))  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities=set()),
-                        Location(id=1, entities={4}),
-                        Location(id=2, entities=set()),
-                        Location(id=3, entities=set()),
-                        Entity(id=4, entities=[])])
+        World(entities=[Tracker(id=0, entities=set()),
+                        Tracker(id=1, entities={4}),
+                        Tracker(id=2, entities=set()),
+                        Tracker(id=3, entities=set()),
+                        Entity(id=4)])
 
         >>> move(4, 2, world)  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities=set()),
-                        Location(id=1, entities=set()),
-                        Location(id=2, entities={4}),
-                        Location(id=3, entities=set()),
-                        Entity(id=4, entities=[])])
+        World(entities=[Tracker(id=0, entities=set()),
+                        Tracker(id=1, entities=set()),
+                        Tracker(id=2, entities={4}),
+                        Tracker(id=3, entities=set()),
+                        Entity(id=4)])
 
         >>> move(4, 3, move(4, 2, move(4, 1, move(4, 0, world))))  # doctest: +NORMALIZE_WHITESPACE
-        World(entities=[Location(id=0, entities=set()),
-                        Location(id=1, entities=set()),
-                        Location(id=2, entities=set()),
-                        Location(id=3, entities={4}),
-                        Entity(id=4, entities=[])])
+        World(entities=[Tracker(id=0, entities=set()),
+                        Tracker(id=1, entities=set()),
+                        Tracker(id=2, entities=set()),
+                        Tracker(id=3, entities={4}),
+                        Entity(id=4)])
 
     """
     updated_entities = []
@@ -198,16 +196,16 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
     # Remove the old entity_id from the old location (if there is one)
     old_locations = locate(entity_id, world)
     for old_location in old_locations:
-        assert isinstance(old_location, Location)
+        assert isinstance(old_location, Tracker)
         updated_old_location = replace(
             old_location, entities=old_location.entities - {entity_id}
         )
         updated_entities.append(updated_old_location)
 
-    # Add the entity_id to the new Location
+    # Add the entity_id to the new Tracker
     location = world.entities[location_id]
 
-    assert isinstance(location, Location)
+    assert isinstance(location, Tracker)
     updated_new_location = replace(location, entities=location.entities | {entity_id})
     updated_entities.append(updated_new_location)
 
@@ -219,21 +217,41 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
     return new_world
 
 
-def locate(entity_id: EntityID, world: W) -> Iterable[Location]:
+def locate(entity_id: EntityID, world: W) -> Iterable[Tracker]:
     """Locate an Entity in a world.
 
     Examples:
-        >>> list(locate(1, create(Entity(), create(Location(), World()))))
+        >>> list(locate(1, create(Entity(), create(Tracker(), World()))))
         []
 
-        >>> list(locate(1, move(1, 0, create(Entity(), create(Location(), World())))))
-        [Location(id=0, entities={1})]
+        >>> list(locate(1, move(1, 0, create(Entity(), create(Tracker(), World())))))
+        [Tracker(id=0, entities={1})]
     """
     locations = filter(
-        lambda e: isinstance(e, Location) and entity_id in e.entities, world.entities
+        lambda e: isinstance(e, Tracker) and entity_id in e.entities, world.entities
     )
     return locations
 
 
 if __name__ == "__main__":
-    pass
+    from pprint import pprint
+
+    @dataclass
+    class Location(Tracker):
+        name: str = ""
+
+    @dataclass
+    class Agent(Entity):
+        name: str = ""
+
+    world = World()
+    for entity in [
+        Location(name="Library"),
+        Location(name="Dining Room"),
+        Location(name="Kitchen"),
+        Location(name="Hallway"),
+        Agent(name="Miss Scarlet"),
+        Agent(name="Professor Plum"),
+    ]:
+        world = create(entity, world)
+    pprint(world)
