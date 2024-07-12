@@ -95,6 +95,11 @@ def replace_in_list(list_, i, thing):
     return new_list
 
 
+def update_entity_list(entity: Entity, entities: List[Entity]):
+    new_entity_list = replace_in_list(entities, entity.id, entity)
+    return new_entity_list
+
+
 def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
     """Move an Entity in a world.
 
@@ -208,9 +213,7 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
 
     new_world_entities = world.entities
     for updated_entity in updated_entities:
-        new_world_entities = replace_in_list(
-            new_world_entities, updated_entity.id, updated_entity
-        )
+        new_world_entities = update_entity_list(updated_entity, new_world_entities)
 
     new_world = replace(world, entities=new_world_entities)
     return new_world
