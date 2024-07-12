@@ -120,12 +120,7 @@ def update_entity_list(entity: Entity, entities: List[Entity]):
     return new_entity_list
 
 
-T = TypeVar("T", bound=Tracker)
-
-
-def move(
-    entity_id: EntityID, location_id: EntityID, world: W, kind: Type[T] = Tracker
-) -> W:
+def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
     """Move an Entity in a world.
 
     Examples:
@@ -234,8 +229,8 @@ def move(
 
 
         In this world, the entity 4 is in faction 2, and location 0:
-        >>> world = move(4, 2, world, kind=Faction)  # doctest: +NORMALIZE_WHITESPACE
-        >>> world = move(4, 0, world, kind=Location)
+        >>> world = move(4, 2, world)  # doctest: +NORMALIZE_WHITESPACE
+        >>> world = move(4, 0, world)
         >>> world  # doctest: +NORMALIZE_WHITESPACE
         World(entities=[Location(id=0, entities={4}, name='north'),
                         Location(id=1, entities=set(), name='south'),
@@ -244,7 +239,7 @@ def move(
                         Entity(id=4)])
 
         Now when we move faction (from 2) to 3, the location isn't changed:
-        >>> move(4, 3, world, kind=Faction)  # doctest: +NORMALIZE_WHITESPACE
+        >>> move(4, 3, world)  # doctest: +NORMALIZE_WHITESPACE
         World(entities=[Location(id=0, entities={4}, name='north'),
                         Location(id=1, entities=set(), name='south'),
                         Faction(id=2, entities=set(), name='blue'),
@@ -252,6 +247,10 @@ def move(
                         Entity(id=4)])
 
     """
+    # Get the new location so we can see what kinds of trackers we need to modify
+    location = world.entities[location_id]
+    kind = type(location)
+
     assert isinstance(entity_id, EntityID)
     assert isinstance(location_id, EntityID)
 
@@ -267,8 +266,6 @@ def move(
         updated_entities.append(updated_old_location)
 
     # Add the entity_id to the new Tracker
-    location = world.entities[location_id]
-
     assert isinstance(location, kind)
     updated_new_location = replace(location, entities=location.entities | {entity_id})
     updated_entities.append(updated_new_location)
@@ -279,6 +276,9 @@ def move(
 
     new_world = replace(world, entities=new_world_entities)
     return new_world
+
+
+T = TypeVar("T", bound=Tracker)
 
 
 def locate(entity_id: EntityID, world: W, kind: Type[T] = Tracker) -> Iterable[T]:
