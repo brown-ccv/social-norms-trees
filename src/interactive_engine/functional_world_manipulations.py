@@ -89,6 +89,36 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
             return new_world
 
 
+def identify(entity: Union[Entity, EntityID], world: W) -> Optional[Entity]:
+    """Given an id or an entity (which may not have an ID), find matching entities.
+    Examples:
+        We can pass in an entity without an ID and get the fully resolved entity back.
+        >>> identify(Entity(), create(Entity(), World()))
+        Entity(id=0)
+
+        We can pass in an entity ID and get the entity back.
+        >>> identify(0, create(Entity(), World()))
+        Entity(id=0)
+
+        If there's no matching entity, then it returns None.
+        >>> identify(Entity(id=1), create(Entity(), World()))
+
+        >>>
+    """
+    match entity:
+        case EntityID():
+            resolved_entity = world.entities[entity]
+        case Entity(id=None):
+            matching_entities = filter(lambda e: e == entity, world.entities)
+            resolved_entity = next(matching_entities, None)
+        case Entity(id=id_):
+            matching_entities = filter(
+                lambda e: e == entity and e.id == id_, world.entities
+            )
+            resolved_entity = next(matching_entities, None)
+    return resolved_entity
+
+
 @dataclass
 class Tracker(Entity):
     """An entity which tracks links with other entities."""
