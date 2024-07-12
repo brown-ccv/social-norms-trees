@@ -85,7 +85,7 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
 
 @dataclass
 class Tracker(Entity):
-    entities: Set[EntityID] = field(default_factory=set)
+    entities: Set[EntityID] = field(default_factory=set, compare=False)
 
 
 def replace_in_list(list_, i, thing):
@@ -191,6 +191,9 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
                         Entity(id=4)])
 
     """
+    assert isinstance(entity_id, EntityID)
+    assert isinstance(location_id, EntityID)
+
     updated_entities = []
 
     # Remove the old entity_id from the old location (if there is one)
@@ -235,6 +238,8 @@ def locate(entity_id: EntityID, world: W) -> Iterable[Tracker]:
 
 if __name__ == "__main__":
     from pprint import pprint
+    import random
+    import time
 
     @dataclass
     class Location(Tracker):
@@ -250,8 +255,37 @@ if __name__ == "__main__":
         Location(name="Dining Room"),
         Location(name="Kitchen"),
         Location(name="Hallway"),
+        Location(name="Lounge"),
+        Location(name="Ballroom"),
+        Location(name="Conservatory"),
+        Location(name="Billiard Room"),
+        Location(name="Study"),
         Agent(name="Miss Scarlet"),
         Agent(name="Professor Plum"),
     ]:
         world = create(entity, world)
     pprint(world)
+
+    locations = list(filter(lambda e: isinstance(e, Location), world.entities))
+    scarlet, plum = list(filter(lambda e: isinstance(e, Agent), world.entities))
+    plum_next_location = 0
+
+    while True:
+
+        world = move(scarlet.id, random.choice(locations).id, world)
+
+        # plum trying to stay 1 ahead of scarlet
+        world = move(plum.id, plum_next_location, world)
+
+        pprint(world)
+
+        print(list(locate(plum.id, world)), list(locate(scarlet.id, world)))
+
+        if list(locate(plum.id, world)) == list(locate(scarlet.id, world)):
+            print("Game over!")
+            break
+
+        scarlet_last_location = next(iter(locate(scarlet.id, world)))
+        plum_next_location = (scarlet_last_location.id + 1) % len(locations)
+
+        time.sleep(1)
