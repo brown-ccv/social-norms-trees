@@ -102,6 +102,10 @@ def identify(entity: Union[Entity, EntityID], world: W) -> Optional[Entity]:
 
         If there's no matching entity, then it returns None.
         >>> identify(Entity(id=1), create(Entity(), World()))
+        Traceback (most recent call last):
+        ...
+        LookupError: Entity Entity(id=1) not found.
+
 
         >>>
     """
@@ -116,6 +120,10 @@ def identify(entity: Union[Entity, EntityID], world: W) -> Optional[Entity]:
                 lambda e: e == entity and e.id == id_, world.entities
             )
             resolved_entity = next(matching_entities, None)
+        case _:
+            resolved_entity = None
+    if resolved_entity is None:
+        raise LookupError(f"Entity {entity} not found.")
     return resolved_entity
 
 
@@ -150,7 +158,9 @@ def update_entity_list(entity: Entity, entities: List[Entity]):
     return new_entity_list
 
 
-def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
+def move(
+    entity_id: Union[Entity, EntityID], location_id: Union[Tracker, EntityID], world: W
+) -> W:
     """Move an Entity in a world.
 
     Examples:
@@ -177,6 +187,22 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
         World(entities=[Tracker(id=0, entities=set()),
                         Entity(id=1)])
 
+
+        We can move an entity by its definition (incomplete):
+        >>> move(Entity(), 0, world)  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Tracker(id=0, entities={1}),
+                        Entity(id=1)])
+
+        Or its complete definition:
+        >>> move(Entity(id=1), 0, world)  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Tracker(id=0, entities={1}),
+                        Entity(id=1)])
+
+        ... but an inconsistent definition will cause an error:
+        >>> move(Entity(id=10), 0, world)  # doctest: +NORMALIZE_WHITESPACE
+        Traceback (most recent call last):
+        ...
+        LookupError: Entity Entity(id=10) not found.
 
         >>> world = create(Entity(),
         ...         create(Entity(),
@@ -276,28 +302,58 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
                         Faction(id=3, entities={4}, name='green'),
                         Entity(id=4)])
 
+        We can also move objects to an entity which is incompletely defined:
+        >>> move(4, Faction(name="blue"), world)  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities={4}, name='north'),
+                        Location(id=1, entities=set(), name='south'),
+                        Faction(id=2, entities={4}, name='blue'),
+                        Faction(id=3, entities=set(), name='green'),
+                        Entity(id=4)])
+
+        ... or completely defined:
+        >>> move(4, Faction(id=2, name="blue"), world)  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities={4}, name='north'),
+                        Location(id=1, entities=set(), name='south'),
+                        Faction(id=2, entities={4}, name='blue'),
+                        Faction(id=3, entities=set(), name='green'),
+                        Entity(id=4)])
+
+        But an inconsistent entity will cause an error:
+        >>> move(4, Faction(id=10, name="blue"), world)  # doctest: +NORMALIZE_WHITESPACE
+        Traceback (most recent call last):
+        ...
+        LookupError: Entity Faction(id=10, entities=set(), name='blue') not found.
+
+        We can also move objects by their (incomplete) definition:
+        >>> move(Entity(), 2, world)  # doctest: +NORMALIZE_WHITESPACE
+        World(entities=[Location(id=0, entities={4}, name='north'),
+                        Location(id=1, entities=set(), name='south'),
+                        Faction(id=2, entities={4}, name='blue'),
+                        Faction(id=3, entities=set(), name='green'),
+                        Entity(id=4)])
+
+
     """
     # Get the new location so we can see what kinds of trackers we need to modify
-    location = world.entities[location_id]
+    location = identify(location_id, world)
+    entity = identify(entity_id, world)
     kind = type(location)
-
-    assert isinstance(entity_id, EntityID)
-    assert isinstance(location_id, EntityID)
 
     updated_entities = []
 
     # Remove the old entity_id from the old location (if there is one)
-    old_locations = locate(entity_id, world, kind=kind)
+    old_locations = locate(entity.id, world, kind=kind)
     for old_location in old_locations:
         assert isinstance(old_location, kind)
         updated_old_location = replace(
-            old_location, entities=old_location.entities - {entity_id}
+            old_location, entities=old_location.entities - {entity.id}
         )
         updated_entities.append(updated_old_location)
 
     # Add the entity_id to the new Tracker
     assert isinstance(location, kind)
-    updated_new_location = replace(location, entities=location.entities | {entity_id})
+
+    updated_new_location = replace(location, entities=location.entities | {entity.id})
     updated_entities.append(updated_new_location)
 
     new_world_entities = world.entities
@@ -311,7 +367,9 @@ def move(entity_id: EntityID, location_id: EntityID, world: W) -> W:
 T = TypeVar("T", bound=Tracker)
 
 
-def locate(entity_id: EntityID, world: W, kind: Type[T] = Tracker) -> Iterable[T]:
+def locate(
+    entity_id: Union[Entity, EntityID], world: W, kind: Type[T] = Tracker
+) -> Iterable[T]:
     """Locate an Entity in a world.
 
     Examples:
@@ -323,10 +381,15 @@ def locate(entity_id: EntityID, world: W, kind: Type[T] = Tracker) -> Iterable[T
 
         >>>
     """
-    locations = filter(
-        lambda e: isinstance(e, kind) and entity_id in e.entities, world.entities
-    )
-    return locations
+    if isinstance(entity_id, Entity):
+        resolved_entity = identify(entity_id, world)
+        return locate(resolved_entity.id, world, kind=kind)
+    else:
+        locations = filter(
+            lambda e: isinstance(e, kind) and entity_id in e.entities,
+            world.entities,
+        )
+        return locations
 
 
 if __name__ == "__main__":
@@ -357,16 +420,16 @@ if __name__ == "__main__":
 
     while True:
 
-        world = move(scarlet.id, random.choice(locations).id, world)
+        world = move(scarlet, random.choice(locations).id, world)
 
         # plum trying to stay 1 ahead of scarlet
-        world = move(plum.id, plum_next_location, world)
+        world = move(plum, plum_next_location, world)
 
         pprint(world)
 
-        print(list(locate(plum.id, world)), list(locate(scarlet.id, world)))
+        print(next(iter(locate(plum, world))), next(iter(locate(scarlet, world))))
 
-        if list(locate(plum.id, world)) == list(locate(scarlet.id, world)):
+        if list(locate(plum, world)) == list(locate(scarlet, world)):
             print("Game over!")
             break
 
