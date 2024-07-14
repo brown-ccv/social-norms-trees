@@ -1,5 +1,5 @@
 from dataclasses import replace, dataclass, field
-from typing import TypeVar, List, Union, Optional, Set, Iterable, Type
+from typing import TypeVar, List, Union, Optional, Set, Iterable, Type, Sequence
 
 from interactive_engine.world import World
 
@@ -71,7 +71,7 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
     match entity:
         case Entity(id=None):
             # try to locate the entity without the ID and destroy it
-            matching_entities = filter(lambda e: e == entity, world.entities)
+            matching_entities = identify_all(entity, world)
             new_world = world
             for matching_entity in matching_entities:
                 new_world = destroy(matching_entity, new_world)
@@ -80,7 +80,7 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
         case Entity(id=id_):
             # we're given an Entity with an ID, so we can just destroy based on the EntityID
             return destroy(id_, world)
-        case id_:
+        case EntityID() as id_:
             # we're given an Entity ID, so we can slice it out of the list
             new_world = replace(
                 world,
@@ -105,9 +105,6 @@ def identify(entity: Union[Entity, EntityID], world: W) -> Optional[Entity]:
         Traceback (most recent call last):
         ...
         LookupError: Entity Entity(id=1) not found.
-
-
-        >>>
     """
     match entity:
         case EntityID():
@@ -125,6 +122,35 @@ def identify(entity: Union[Entity, EntityID], world: W) -> Optional[Entity]:
     if resolved_entity is None:
         raise LookupError(f"Entity {entity} not found.")
     return resolved_entity
+
+
+def identify_all(entity: Union[Entity, EntityID], world: W) -> Sequence[Entity]:
+    """Given an id or an entity (which may not have an ID), find matching entities.
+    Examples:
+        We can pass in an entity without an ID and get the fully resolved entity back.
+        >>> list(identify_all(Entity(), create(Entity(), World())))
+        [Entity(id=0)]
+
+        We can pass in an entity ID and get the entity back.
+        >>> list(identify_all(0, create(Entity(), World())))
+        [Entity(id=0)]
+
+        If there's no matching entity, then it returns None.
+        >>> list(identify_all(Entity(id=1), create(Entity(), World())))
+        []
+    """
+    match entity:
+        case EntityID():
+            matching_entities = [world.entities[entity]]
+        case Entity(id=None):
+            matching_entities = filter(lambda e: e == entity, world.entities)
+        case Entity(id=id_):
+            matching_entities = filter(
+                lambda e: e == entity and e.id == id_, world.entities
+            )
+        case _:
+            matching_entities = []
+    return matching_entities
 
 
 @dataclass
