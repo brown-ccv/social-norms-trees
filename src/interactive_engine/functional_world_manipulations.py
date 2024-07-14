@@ -71,7 +71,7 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
     match entity:
         case Entity(id=None):
             # try to locate the entity without the ID and destroy it
-            matching_entities = identify_all(entity, world)
+            matching_entities = resolve_all(entity, world)
             new_world = world
             for matching_entity in matching_entities:
                 new_world = destroy(matching_entity, new_world)
@@ -89,19 +89,19 @@ def destroy(entity: Union[Entity, EntityID], world: W) -> W:
             return new_world
 
 
-def identify(entity: Union[Entity, EntityID], world: W) -> Optional[Entity]:
+def resolve(entity: Union[Entity, EntityID], world: W) -> Optional[Entity]:
     """Given an id or an entity (which may not have an ID), find matching entities.
     Examples:
         We can pass in an entity without an ID and get the fully resolved entity back.
-        >>> identify(Entity(), create(Entity(), World()))
+        >>> resolve(Entity(), create(Entity(), World()))
         Entity(id=0)
 
         We can pass in an entity ID and get the entity back.
-        >>> identify(0, create(Entity(), World()))
+        >>> resolve(0, create(Entity(), World()))
         Entity(id=0)
 
         If there's no matching entity, then it returns None.
-        >>> identify(Entity(id=1), create(Entity(), World()))
+        >>> resolve(Entity(id=1), create(Entity(), World()))
         Traceback (most recent call last):
         ...
         LookupError: Entity Entity(id=1) not found.
@@ -124,19 +124,19 @@ def identify(entity: Union[Entity, EntityID], world: W) -> Optional[Entity]:
     return resolved_entity
 
 
-def identify_all(entity: Union[Entity, EntityID], world: W) -> Sequence[Entity]:
+def resolve_all(entity: Union[Entity, EntityID], world: W) -> Sequence[Entity]:
     """Given an id or an entity (which may not have an ID), find matching entities.
     Examples:
         We can pass in an entity without an ID and get the fully resolved entity back.
-        >>> list(identify_all(Entity(), create(Entity(), World())))
+        >>> list(resolve_all(Entity(), create(Entity(), World())))
         [Entity(id=0)]
 
         We can pass in an entity ID and get the entity back.
-        >>> list(identify_all(0, create(Entity(), World())))
+        >>> list(resolve_all(0, create(Entity(), World())))
         [Entity(id=0)]
 
         If there's no matching entity, then it returns None.
-        >>> list(identify_all(Entity(id=1), create(Entity(), World())))
+        >>> list(resolve_all(Entity(id=1), create(Entity(), World())))
         []
     """
     match entity:
@@ -361,8 +361,8 @@ def move(
 
     """
     # Get the new location so we can see what kinds of trackers we need to modify
-    location = identify(location_id, world)
-    entity = identify(entity_id, world)
+    location = resolve(location_id, world)
+    entity = resolve(entity_id, world)
     kind = type(location)
 
     updated_entities = []
@@ -408,7 +408,7 @@ def locate(
         >>>
     """
     if isinstance(entity_id, Entity):
-        resolved_entity = identify(entity_id, world)
+        resolved_entity = resolve(entity_id, world)
         return locate(resolved_entity.id, world, kind=kind)
     else:
         locations = filter(
