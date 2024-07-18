@@ -23,7 +23,7 @@ readme = "README.md" # Optional
 # https://packaging.python.org/guides/distributing-packages-using-setuptools/#python-requires
 requires-python = ">=3.7"
 
-license = {file = "LICENSE.txt"}
+license = {file = "LICENSE"}
 
 # This field adds keywords for your project which will appear on the
 # project page. What does your project relate to?
@@ -90,7 +90,10 @@ dependencies = [ # Optional
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = []
+test = [
+  "coverage",
+  "pytest"
+]
 
 # List URLs that are relevant to your project
 #
@@ -118,14 +121,3 @@ build-backend = "hatchling.build"
 
 [tool.hatch]
 version.source = "vcs"
-
-[tool.hatch.envs.default]
-type = "virtual"
-path = ".venv"
-
-[tool.hatch.envs.hatch-test]
-extra-args = [
-  "src/",
-  "--doctest-modules"
-]
-
