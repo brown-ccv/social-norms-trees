@@ -8,11 +8,11 @@ on:
 
 jobs:
 
-  build:
+  build-and-check:
     uses: ./.github/workflows/build.yml
 
   publish:
-    needs: [ build, check ]
+    needs: [ build-and-check ]
     runs-on: ubuntu-latest
     environment: release
     permissions:
