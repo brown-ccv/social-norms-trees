@@ -1,10 +1,6 @@
-import time
 from dataclasses import dataclass, replace, field
-import itertools
-from collections import namedtuple
-from functools import partial
 from pprint import pprint
-from typing import Callable, List, Iterable, Optional
+from typing import Callable, List, Optional, TypeVar
 
 import click
 
@@ -16,11 +12,9 @@ class World:
     available_behaviors: List["Behavior"] = field(default_factory=list)
 
 
-@dataclass
-class Behavior:
-    name: str
-    message: str
-    callback: Callable[["World"], "World"]
+W = TypeVar("W", bound=World)
+
+Behavior = Callable[[W], W]
 
 
 def add_x(w: World, x: int = 1) -> World:
@@ -36,12 +30,12 @@ def add_two(w: World) -> World:
     return add_x(w, 2)
 
 
-def get_behavior_name(callback: Callable[["World"], "World"]) -> str:
+def get_behavior_name(callback: Behavior) -> str:
     name = callback.__name__
     return name
 
 
-def get_behavior_message(callback: Callable[["World"], "World"]) -> str:
+def get_behavior_message(callback: Behavior) -> str:
     try:
         message = str.split(callback.__doc__, "\n")[0]
         assert message != ""
@@ -91,7 +85,33 @@ def add_behavior(
 
 
 def remove_behavior(world: World, index: Optional[int] = None):
-    """Remove a behavior"""
+    """Remove a behavior
+
+    Examples:
+        An empty world has no behaviors:
+        >>> World()  # doctest: +ELLIPSIS
+        World(..., behavior=[], ...)
+
+        If we try to remove a behavior from an empty world, nothing happens:
+        >>> remove_behavior(World(), index=0)  # doctest: +ELLIPSIS
+        World(..., behavior=[], available_behaviors=[])
+
+        >>> remove_behavior(World(), index=1)  # doctest: +ELLIPSIS
+        World(..., behavior=[], available_behaviors=[])
+
+        If we have a world with some behaviors:
+        >>> World(behavior=[add_one, add_two])  # doctest: +ELLIPSIS
+        World(... behavior=[<function add_one at 0x...>, <function add_two at 0x...>], ...)
+
+        ... we can remove one:
+        >>> remove_behavior(World(behavior=[add_one, add_two]), index=1)  # doctest: +ELLIPSIS
+        World(..., behavior=[<function add_one at 0x...>], ...)
+
+        Trying to remove one beyond the limits of the list leaves the world unchanged:
+        >>> remove_behavior(World(behavior=[add_one, add_two]), index=3)  # doctest: +ELLIPSIS
+        World(... behavior=[<function add_one at 0x...>, <function add_two at 0x...>], ...)
+
+    """
     if index is None:
         behavior_listing = "\n".join(
             [f"{i}: {get_behavior_message(b)}" for i, b in enumerate(world.behavior)]
