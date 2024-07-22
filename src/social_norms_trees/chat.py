@@ -1,5 +1,5 @@
 import time
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, field
 import itertools
 from collections import namedtuple
 from functools import partial
@@ -11,9 +11,9 @@ import click
 
 @dataclass
 class World:
-    state: int
-    behavior: List["Behavior"]
-    available_behaviors: List["Behavior"]
+    state: int = field(default=0)
+    behavior: List["Behavior"] = field(default_factory=list)
+    available_behaviors: List["Behavior"] = field(default_factory=list)
 
 
 @dataclass
@@ -21,20 +21,6 @@ class Behavior:
     name: str
     message: str
     callback: Callable[["World"], "World"]
-
-
-all_behaviors = [
-    Behavior(
-        "add_one",
-        "Add one to the state",
-        add_one := lambda w: replace(w, state=w.state + 1),
-    ),
-    Behavior(
-        "add_two",
-        "Add two to the state",
-        add_two := lambda w: replace(w, state=w.state + 2),
-    ),
-]
 
 
 def add_x(w: World, x: int = 1) -> World:
@@ -69,25 +55,20 @@ def get_behavior_message(callback: Callable[["World"], "World"]) -> str:
     return message
 
 
-def register_behavior(
-    callback: Callable[["World"], "World"], behavior_list=all_behaviors
-):
-    """Register a behavior to the list of all behaviors
-
-    Introspects to get the message to be included with the behavior from the top line of the
-    docstring.
-    """
-    name = get_behavior_name(callback)
-    message = get_behavior_message(callback)
-    behavior_list.append(Behavior(name, message, callback))
-    return callback
-
-
-@register_behavior
 def add_behavior(
     world: World, behavior: Optional[Behavior] = None, index: Optional[int] = None
 ):
-    """Add a behavior"""
+    """Add a behavior
+
+    Examples:
+        An empty world has no behaviors:
+        >>> World()  # doctest: +ELLIPSIS
+        World(..., behavior=[], ...)
+
+        We can add a behavior to the world:
+        >>> add_behavior(World(), add_one, 0)  # doctest: +ELLIPSIS
+        World(..., behavior=[<function add_one at 0x...>], ...)
+    """
 
     if behavior is None:
         behavior_text = click.prompt(
@@ -104,12 +85,11 @@ def add_behavior(
     if index is None:
         index = click.prompt(text="Where would you like to insert it?", type=int)
 
-    new_behavior = world.behavior[:index] + [behavior.callback] + world.behavior[index:]
+    new_behavior = world.behavior[:index] + [behavior] + world.behavior[index:]
     new_world = replace(world, behavior=new_behavior)
     return new_world
 
 
-@register_behavior
 def remove_behavior(world: World, index: Optional[int] = None):
     """Remove a behavior"""
     if index is None:
@@ -123,7 +103,6 @@ def remove_behavior(world: World, index: Optional[int] = None):
     return new_world
 
 
-@register_behavior
 def print_world(world: World):
     """"""
 
