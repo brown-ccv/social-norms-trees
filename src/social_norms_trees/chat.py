@@ -1,6 +1,7 @@
 from dataclasses import dataclass, replace, field
 from pprint import pprint
-from typing import Callable, List, Optional, TypeVar
+from time import sleep
+from typing import Callable, List, Optional, TypeVar, Literal
 
 import click
 
@@ -35,6 +36,13 @@ def get_behavior_message(callback: Behavior) -> str:
     return message
 
 
+def list_behavior(world: World) -> str:
+    behavior_listing = "\n".join(
+        [f"{i}: {get_behavior_message(b)}" for i, b in enumerate(world.behavior)]
+    )
+    return behavior_listing
+
+
 def add_behavior(
     world: World, behavior: Optional[Behavior] = None, index: Optional[int] = None
 ):
@@ -48,6 +56,8 @@ def add_behavior(
         We can add a behavior to the world:
         >>> add_behavior(World(), add_one, 0)  # doctest: +ELLIPSIS
         World(behavior=[<function add_one at 0x...>], ...)
+
+
     """
 
     if behavior is None:
@@ -63,7 +73,10 @@ def add_behavior(
             if get_behavior_message(b) == behavior_text
         )
     if index is None:
-        index = click.prompt(text="Where would you like to insert it?", type=int)
+        index = click.prompt(
+            text=f"Where would you like to insert it?\n{list_behavior(world)}\n",
+            type=int,
+        )
 
     new_behavior = world.behavior[:index] + [behavior] + world.behavior[index:]
     new_world = replace(world, behavior=new_behavior)
@@ -99,18 +112,38 @@ def remove_behavior(world: World, index: Optional[int] = None):
 
     """
     if index is None:
-        behavior_listing = "\n".join(
-            [f"{i}: {get_behavior_message(b)}" for i, b in enumerate(world.behavior)]
-        )
-        text = "Which behavior would you like to remove?\n" + behavior_listing + "\n"
+        text = f"Which behavior would you like to remove?\n{list_behavior(world)}\n"
         index = click.prompt(text=text, type=int)
     new_behavior = world.behavior[:index] + world.behavior[index + 1 :]
     new_world = replace(world, behavior=new_behavior)
     return new_world
 
 
+def update_behavior(
+    world: World,
+    action: Optional[Literal["add", "remove", "skip"]] = None,
+    behavior: Optional[Behavior] = None,
+    index: Optional[int] = None,
+) -> World:
+    """Update a behavior"""
+    if action is None:
+        action = click.prompt(
+            text="How would you like to update the behaviors?",
+            default="skip",
+            type=click.Choice(["add", "remove", "skip"]),
+        )
+    match action:
+        case "add":
+            new_world = add_behavior(world, behavior, index)
+        case "remove":
+            new_world = remove_behavior(world, index)
+        case "skip":
+            new_world = world
+    return new_world
+
+
 def print_world(world: World):
-    """"""
+    """Display the world"""
 
     pprint(world)
     return
@@ -135,20 +168,27 @@ def add_two(w: IntWorld) -> IntWorld:
 
 
 def main(world):
+    i = 0
     while True:
-        for behavior in world.behavior:
-            result = behavior(world)
-            if result is not None and isinstance(result, type(world)):
-                world = result
-                print_world(world)
+        behavior = world.behavior[i]
+        result = behavior(world)
+        if result is not None and isinstance(result, type(world)):
+            world = result
+            print_world(world)
+
+        sleep(0.1)
+        i += 1
+        if i >= len(world.behavior):  # Loop back once we've done all the behaviors
+            i = 0
 
 
 if __name__ == "__main__":
     world = IntWorld(
         state=0,
-        behavior=[print_world, remove_behavior, add_one, add_behavior],
+        behavior=[print_world, add_one, update_behavior],
         available_behaviors=[
             print_world,
+            update_behavior,
             add_behavior,
             remove_behavior,
             add_one,
