@@ -7,7 +7,6 @@ import click
 
 @dataclass
 class World:
-    state: int = field(default=0)
     behavior: List["Behavior"] = field(default_factory=list)
     available_behaviors: List["Behavior"] = field(default_factory=list)
 
@@ -15,19 +14,6 @@ class World:
 W = TypeVar("W", bound=World)
 
 Behavior = Callable[[W], W]
-
-
-def add_x(w: World, x: int = 1) -> World:
-    new_world = replace(w, state=w.state + x)
-    return new_world
-
-
-def add_one(w: World) -> World:
-    return add_x(w, 1)
-
-
-def add_two(w: World) -> World:
-    return add_x(w, 2)
 
 
 def get_behavior_name(callback: Behavior) -> str:
@@ -57,11 +43,11 @@ def add_behavior(
     Examples:
         An empty world has no behaviors:
         >>> World()  # doctest: +ELLIPSIS
-        World(..., behavior=[], ...)
+        World(behavior=[], ...)
 
         We can add a behavior to the world:
         >>> add_behavior(World(), add_one, 0)  # doctest: +ELLIPSIS
-        World(..., behavior=[<function add_one at 0x...>], ...)
+        World(behavior=[<function add_one at 0x...>], ...)
     """
 
     if behavior is None:
@@ -90,26 +76,26 @@ def remove_behavior(world: World, index: Optional[int] = None):
     Examples:
         An empty world has no behaviors:
         >>> World()  # doctest: +ELLIPSIS
-        World(..., behavior=[], ...)
+        World(behavior=[], ...)
 
         If we try to remove a behavior from an empty world, nothing happens:
         >>> remove_behavior(World(), index=0)  # doctest: +ELLIPSIS
-        World(..., behavior=[], available_behaviors=[])
+        World(behavior=[], available_behaviors=[])
 
         >>> remove_behavior(World(), index=1)  # doctest: +ELLIPSIS
-        World(..., behavior=[], available_behaviors=[])
+        World(behavior=[], available_behaviors=[])
 
         If we have a world with some behaviors:
         >>> World(behavior=[add_one, add_two])  # doctest: +ELLIPSIS
-        World(... behavior=[<function add_one at 0x...>, <function add_two at 0x...>], ...)
+        World(behavior=[<function add_one at 0x...>, <function add_two at 0x...>], ...)
 
         ... we can remove one:
         >>> remove_behavior(World(behavior=[add_one, add_two]), index=1)  # doctest: +ELLIPSIS
-        World(..., behavior=[<function add_one at 0x...>], ...)
+        World(behavior=[<function add_one at 0x...>], ...)
 
         Trying to remove one beyond the limits of the list leaves the world unchanged:
         >>> remove_behavior(World(behavior=[add_one, add_two]), index=3)  # doctest: +ELLIPSIS
-        World(... behavior=[<function add_one at 0x...>, <function add_two at 0x...>], ...)
+        World(behavior=[<function add_one at 0x...>, <function add_two at 0x...>], ...)
 
     """
     if index is None:
@@ -130,6 +116,24 @@ def print_world(world: World):
     return
 
 
+@dataclass
+class IntWorld(World):
+    state: int = field(default=0)
+
+
+def add_x(w: IntWorld, x: int = 1) -> IntWorld:
+    new_world = replace(w, state=w.state + x)
+    return new_world
+
+
+def add_one(w: IntWorld) -> IntWorld:
+    return add_x(w, 1)
+
+
+def add_two(w: IntWorld) -> IntWorld:
+    return add_x(w, 2)
+
+
 def main(world):
     while True:
         for behavior in world.behavior:
@@ -140,7 +144,7 @@ def main(world):
 
 
 if __name__ == "__main__":
-    world = World(
+    world = IntWorld(
         state=0,
         behavior=[print_world, remove_behavior, add_one, add_behavior],
         available_behaviors=[
