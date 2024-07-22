@@ -1,5 +1,6 @@
 """Example of using worlds with just an integer for the state of the world"""
 
+import warnings
 from dataclasses import dataclass, field, replace
 from functools import partial, wraps
 from itertools import islice
@@ -135,24 +136,32 @@ def say(message):
     print(message)
 
 
+def prompt_identify_node(
+    tree: py_trees.behaviour.Behaviour, message: str = "Which node?"
+) -> py_trees.behaviour.Behaviour:
+    node_index = click.prompt(
+        text=f"{format_tree_with_indices(tree)}\n{message}",
+        type=int,
+    )
+    node = next(islice(iterate_nodes(tree), node_index, node_index + 1))
+    return node
+
+
 def add_child(
     tree: T,
     parent: Optional[py_trees.composites.Composite] = None,
     child: Optional[py_trees.behaviour.Behaviour] = None,
 ) -> T:
     if parent is None:
-        parent_index = click.prompt(
-            text=f"{format_tree_with_indices(tree)}\n"
-            f"Which parent node do you want to add the child to?",
-            type=int,
+        parent = prompt_identify_node(
+            tree, f"Which parent node do you want to add the child to?"
         )
-        parent = next(islice(iterate_nodes(tree), parent_index, parent_index + 1))
     if child is None:
         child_key = click.prompt(
-            text="What should the child do?", type=click.Choice(["say something"])
+            text="What should the child do?", type=click.Choice(["say"])
         )
         match child_key:
-            case "say something":
+            case "say":
                 message = click.prompt(text="What should it say?", type=str)
 
                 child_function = wraps(say)(partial(say, message))
@@ -163,6 +172,22 @@ def add_child(
             case _:
                 raise NotImplementedError()
     parent.add_child(child)
+    return tree
+
+
+def remove_node(tree: T, node: Optional[py_trees.behaviour.Behaviour] = None) -> T:
+    if node is None:
+        node = prompt_identify_node(tree, f"Which node do you want to remove?")
+    parent_node = node.parent
+    if parent_node is None:
+        warnings.warn(
+            f"{node}'s parent is None, so we can't remove it. You can't remove the root node."
+        )
+        return tree
+    elif isinstance(parent_node, py_trees.composites.Composite):
+        parent_node.remove_child(node)
+    else:
+        raise NotImplementedError()
     return tree
 
 
@@ -198,8 +223,12 @@ if __name__ == "__main__":
 
     print(py_trees.display.ascii_tree(tree))
     print(format_tree_with_indices(tree))
-    add_child(tree)
+    remove_node(tree)
     print(format_tree_with_indices(tree))
+    remove_node(tree)
+    print(format_tree_with_indices(tree))
+    remove_node(tree)
+
     pass
 
     world_ = BehaviorTreeWorld(
