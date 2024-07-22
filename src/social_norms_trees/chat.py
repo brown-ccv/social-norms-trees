@@ -75,12 +75,13 @@ def remove_behavior(world: World, index: Optional[int] = None):
     if index is None:
         behavior_listing = "\n".join([f"{i}: {get_behavior_message(b)}" for i, b in enumerate(
             world.behavior)])
-        index = click.prompt(text="Which behavior would you like to remove?\n" + behavior_listing
-                                  +"\n",
+        text = "Which behavior would you like to remove?\n" + behavior_listing + "\n"
+        index = click.prompt(text=text,
                              type=int)
     new_behavior = world.behavior[:index] + world.behavior[index + 1:]
     new_world = replace(world, behavior=new_behavior)
     return new_world
+
 
 @register_behavior
 def print_world(world: World):
@@ -89,6 +90,7 @@ def print_world(world: World):
     pprint(world)
     return
 
+
 def main(world):
     while True:
         for behavior in world.behavior:
@@ -96,6 +98,7 @@ def main(world):
             if result is not None and isinstance(result, type(world)):
                 world = result
                 print_world(world)
+
 
 if __name__ == "__main__":
     world = World(state=0, behavior=[remove_behavior, add_one, add_behavior])
