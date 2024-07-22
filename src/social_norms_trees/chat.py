@@ -1,3 +1,5 @@
+"""Module for worlds which have mutable behaviors"""
+
 from dataclasses import dataclass, replace, field
 from pprint import pprint
 from time import sleep
@@ -8,6 +10,8 @@ import click
 
 @dataclass
 class World:
+    """Class which holds a list of active and available behaviors."""
+
     behavior: List["Behavior"] = field(default_factory=list)
     available_behaviors: List["Behavior"] = field(default_factory=list)
 
@@ -18,11 +22,13 @@ Behavior = Callable[[W], W]
 
 
 def get_behavior_name(callback: Behavior) -> str:
+    """Get the name of a callable Behavior"""
     name = callback.__name__
     return name
 
 
 def get_behavior_message(callback: Behavior) -> str:
+    """Get the top line of the docstring of a callable Behavior, or (if missing) its name"""
     try:
         message = str.split(callback.__doc__, "\n")[0]
         assert message != ""
@@ -37,6 +43,7 @@ def get_behavior_message(callback: Behavior) -> str:
 
 
 def list_behavior(world: World) -> str:
+    """List all the behaviors and their indices"""
     behavior_listing = "\n".join(
         [f"{i}: {get_behavior_message(b)}" for i, b in enumerate(world.behavior)]
     )
@@ -156,19 +163,23 @@ class IntWorld(World):
 
 
 def add_x(w: IntWorld, x: int = 1) -> IntWorld:
+    """Add x to the state of the world"""
     new_world = replace(w, state=w.state + x)
     return new_world
 
 
 def add_one(w: IntWorld) -> IntWorld:
+    """Add 1 to the state of the world"""
     return add_x(w, 1)
 
 
 def add_two(w: IntWorld) -> IntWorld:
+    """Add 2 to the state of the world"""
     return add_x(w, 2)
 
 
 def main(world):
+    """Run the world's behaviors in a loop"""
     i = 0
     while True:
         behavior = world.behavior[i]
