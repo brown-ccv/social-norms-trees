@@ -137,8 +137,9 @@ def update_behavior(
             new_world = add_behavior(world, behavior, index)
         case "remove":
             new_world = remove_behavior(world, index)
-        case "skip":
+        case "skip" | _:
             new_world = world
+
     return new_world
 
 
