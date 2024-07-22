@@ -60,6 +60,10 @@ def add_behavior(
         >>> World()  # doctest: +ELLIPSIS
         World(behavior=[], ...)
 
+        >>> def add_one(world):
+        ...     # Dummy Behavior
+        ...     return world
+
         We can add a behavior to the world:
         >>> add_behavior(World(), add_one, 0)  # doctest: +ELLIPSIS
         World(behavior=[<function add_one at 0x...>], ...)
@@ -106,6 +110,11 @@ def remove_behavior(world: World, index: Optional[int] = None):
         World(behavior=[], available_behaviors=[])
 
         If we have a world with some behaviors:
+        >>> def add_one(world):
+        ...     return world
+        >>> def add_two(world):
+        ...     return world
+
         >>> World(behavior=[add_one, add_two])  # doctest: +ELLIPSIS
         World(behavior=[<function add_one at 0x...>, <function add_two at 0x...>], ...)
 
@@ -157,27 +166,6 @@ def print_world(world: World):
     return
 
 
-@dataclass
-class IntWorld(World):
-    state: int = field(default=0)
-
-
-def add_x(w: IntWorld, x: int = 1) -> IntWorld:
-    """Add x to the state of the world"""
-    new_world = replace(w, state=w.state + x)
-    return new_world
-
-
-def add_one(w: IntWorld) -> IntWorld:
-    """Add 1 to the state of the world"""
-    return add_x(w, 1)
-
-
-def add_two(w: IntWorld) -> IntWorld:
-    """Add 2 to the state of the world"""
-    return add_x(w, 2)
-
-
 def main(world):
     """Run the world's behaviors in a loop"""
     i = 0
@@ -195,16 +183,13 @@ def main(world):
 
 
 if __name__ == "__main__":
-    world_ = IntWorld(
-        state=0,
-        behavior=[print_world, add_one, update_behavior],
+    world_ = World(
+        behavior=[print_world, update_behavior],
         available_behaviors=[
             print_world,
             update_behavior,
             add_behavior,
             remove_behavior,
-            add_one,
-            add_two,
         ],
     )
     main(world_)
