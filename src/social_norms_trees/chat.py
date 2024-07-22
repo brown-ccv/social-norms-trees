@@ -22,8 +22,16 @@ class Behavior:
 
 
 all_behaviors = [
-    Behavior("add_one", "Add one to the state", add_one := lambda w: replace(w, state=w.state + 1)),
-    Behavior("add_two", "Add two to the state", add_two := lambda w: replace(w, state=w.state + 2)),
+    Behavior(
+        "add_one",
+        "Add one to the state",
+        add_one := lambda w: replace(w, state=w.state + 1),
+    ),
+    Behavior(
+        "add_two",
+        "Add two to the state",
+        add_two := lambda w: replace(w, state=w.state + 2),
+    ),
 ]
 
 
@@ -36,7 +44,11 @@ def get_behavior_message(callback: Callable[["World"], "World"]) -> str:
     try:
         message = str.split(callback.__doc__, "\n")[0]
         assert message != ""
-    except (IndexError, TypeError, AssertionError):  # docstring is empty or non-existent
+    except (
+        IndexError,
+        TypeError,
+        AssertionError,
+    ):  # docstring is empty or non-existent
         message = get_behavior_name(callback)
 
     return message
@@ -55,11 +67,15 @@ def register_behavior(callback: Callable[["World"], "World"]):
 
 
 @register_behavior
-def add_behavior(world: World, behavior: Optional[Behavior] = None, index: Optional[int] = None):
+def add_behavior(
+    world: World, behavior: Optional[Behavior] = None, index: Optional[int] = None
+):
     """Add a behavior"""
     if behavior is None:
-        behavior_text = click.prompt(text="Which behavior would you like to add?",
-                                     type=click.Choice([b.message for b in all_behaviors]))
+        behavior_text = click.prompt(
+            text="Which behavior would you like to add?",
+            type=click.Choice([b.message for b in all_behaviors]),
+        )
         behavior = next(b for b in all_behaviors if b.message == behavior_text)
     if index is None:
         index = click.prompt(text="Where would you like to insert it?", type=int)
@@ -73,12 +89,12 @@ def add_behavior(world: World, behavior: Optional[Behavior] = None, index: Optio
 def remove_behavior(world: World, index: Optional[int] = None):
     """Remove a behavior"""
     if index is None:
-        behavior_listing = "\n".join([f"{i}: {get_behavior_message(b)}" for i, b in enumerate(
-            world.behavior)])
+        behavior_listing = "\n".join(
+            [f"{i}: {get_behavior_message(b)}" for i, b in enumerate(world.behavior)]
+        )
         text = "Which behavior would you like to remove?\n" + behavior_listing + "\n"
-        index = click.prompt(text=text,
-                             type=int)
-    new_behavior = world.behavior[:index] + world.behavior[index + 1:]
+        index = click.prompt(text=text, type=int)
+    new_behavior = world.behavior[:index] + world.behavior[index + 1 :]
     new_world = replace(world, behavior=new_behavior)
     return new_world
 
