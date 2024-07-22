@@ -195,7 +195,7 @@ def main(world):
 
 
 if __name__ == "__main__":
-    world = IntWorld(
+    world_ = IntWorld(
         state=0,
         behavior=[print_world, add_one, update_behavior],
         available_behaviors=[
@@ -207,4 +207,4 @@ if __name__ == "__main__":
             add_two,
         ],
     )
-    main(world)
+    main(world_)
