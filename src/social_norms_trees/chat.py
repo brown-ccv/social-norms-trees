@@ -2,6 +2,7 @@ import time
 from dataclasses import dataclass, replace
 import itertools
 from collections import namedtuple
+from functools import partial
 from pprint import pprint
 from typing import Callable, List, Iterable, Optional
 
@@ -12,6 +13,7 @@ import click
 class World:
     state: int
     behavior: List["Behavior"]
+    available_behaviors: List["Behavior"]
 
 
 @dataclass
@@ -35,6 +37,19 @@ all_behaviors = [
 ]
 
 
+def add_x(w: World, x: int = 1) -> World:
+    new_world = replace(w, state=w.state + x)
+    return new_world
+
+
+def add_one(w: World) -> World:
+    return add_x(w, 1)
+
+
+def add_two(w: World) -> World:
+    return add_x(w, 2)
+
+
 def get_behavior_name(callback: Callable[["World"], "World"]) -> str:
     name = callback.__name__
     return name
@@ -54,7 +69,9 @@ def get_behavior_message(callback: Callable[["World"], "World"]) -> str:
     return message
 
 
-def register_behavior(callback: Callable[["World"], "World"]):
+def register_behavior(
+    callback: Callable[["World"], "World"], behavior_list=all_behaviors
+):
     """Register a behavior to the list of all behaviors
 
     Introspects to get the message to be included with the behavior from the top line of the
@@ -62,7 +79,7 @@ def register_behavior(callback: Callable[["World"], "World"]):
     """
     name = get_behavior_name(callback)
     message = get_behavior_message(callback)
-    all_behaviors.append(Behavior(name, message, callback))
+    behavior_list.append(Behavior(name, message, callback))
     return callback
 
 
@@ -71,12 +88,19 @@ def add_behavior(
     world: World, behavior: Optional[Behavior] = None, index: Optional[int] = None
 ):
     """Add a behavior"""
+
     if behavior is None:
         behavior_text = click.prompt(
             text="Which behavior would you like to add?",
-            type=click.Choice([b.message for b in all_behaviors]),
+            type=click.Choice(
+                [get_behavior_message(b) for b in world.available_behaviors]
+            ),
         )
-        behavior = next(b for b in all_behaviors if b.message == behavior_text)
+        behavior = next(
+            b
+            for b in world.available_behaviors
+            if get_behavior_message(b) == behavior_text
+        )
     if index is None:
         index = click.prompt(text="Where would you like to insert it?", type=int)
 
@@ -117,5 +141,15 @@ def main(world):
 
 
 if __name__ == "__main__":
-    world = World(state=0, behavior=[remove_behavior, add_one, add_behavior])
+    world = World(
+        state=0,
+        behavior=[print_world, remove_behavior, add_one, add_behavior],
+        available_behaviors=[
+            print_world,
+            add_behavior,
+            remove_behavior,
+            add_one,
+            add_two,
+        ],
+    )
     main(world)
