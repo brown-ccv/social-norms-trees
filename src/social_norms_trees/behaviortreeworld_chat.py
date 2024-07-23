@@ -152,6 +152,19 @@ def add_child(
     parent: Optional[py_trees.composites.Composite] = None,
     child: Optional[py_trees.behaviour.Behaviour] = None,
 ) -> T:
+    """Add a behaviour to the tree
+
+    Examples:
+        >>> tree = py_trees.composites.Sequence("", False, children=[])
+        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+        [-]
+
+        >>> print(py_trees.display.ascii_tree(add_child(tree, py_trees.behaviours.Success())))
+        ... # doctest: +NORMALIZE_WHITESPACE
+        [-]
+            --> Success
+
+    """
     if parent is None:
         parent = prompt_identify_node(
             tree, f"Which parent node do you want to add the child to?"
@@ -176,6 +189,23 @@ def add_child(
 
 
 def remove_node(tree: T, node: Optional[py_trees.behaviour.Behaviour] = None) -> T:
+    """Remove a behaviour from the tree
+
+    Examples:
+        >>> tree = py_trees.composites.Sequence("", False, children=[
+        ...    py_trees.behaviours.Success(),
+        ...    failure_node := py_trees.behaviours.Failure()])
+        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+        [-]
+            --> Success
+            --> Failure
+
+        >>> print(py_trees.display.ascii_tree(remove_node(tree, failure_node)))
+        ... # doctest: +NORMALIZE_WHITESPACE
+        [-]
+            --> Success
+
+    """
     if node is None:
         node = prompt_identify_node(tree, f"Which node do you want to remove?")
     parent_node = node.parent
