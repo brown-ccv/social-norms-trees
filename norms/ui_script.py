@@ -1,0 +1,71 @@
+import argparse
+import sys
+import py_trees
+
+
+def main(tick_time: float = 1):
+    """
+        tick_time: time between each node
+    """
+    # ------- Initialize the behavior tree -------
+
+    root = py_trees.composites.Sequence(name="Sequence", memory=False)
+
+    #approach_door
+    approach_door = py_trees.behaviours.Success(name="approach_door")
+
+    #go_through_door
+    go_through_door = py_trees.behaviours.Dummy(name="go_through_door")
+
+    #open_door 
+    open_door = py_trees.behaviours.Dummy(name="open_door")
+
+    root.add_children([approach_door, open_door, go_through_door])
+
+    behaviour_tree = py_trees.trees.BehaviourTree(root)
+
+
+
+
+
+    # ------- Run behavior tree, node by node -------
+    # First, show the user the behavior tree, before running
+    print(py_trees.display.unicode_tree(root=root, show_status=True))
+    
+    # Get user input to decide which behavior to add
+    print("1. Knock on door")
+    print("2. Sound siren")
+    print("3. Turn around")
+    behavior_choice = input("Enter the number of which behavior to add to the tree: ")
+
+    if behavior_choice == "1":
+        new_behavior = py_trees.behaviours.Dummy(name="knock_on_door")
+    elif behavior_choice == "2":
+        new_behavior = py_trees.behaviours.Dummy(name="sound_siren")
+    elif behavior_choice == "3":
+        new_behavior = py_trees.behaviours.Dummy(name="turn_around")
+
+    index = 1
+
+    print("\n")
+    for x in root.children:
+        print(f"{index}. {x.name}")
+        index += 1
+
+    index_choice = input("Enter1 the number of which behavior to place the new behavior in front of: ")
+
+
+    if index_choice:
+        # Insert the chosen behavior into the tree
+        root.insert_child(new_behavior, int(index_choice)-1)
+
+    
+
+    print("\nUpdated behavior tree:")
+    print(py_trees.display.unicode_tree(root=root, show_status=True))
+
+   
+
+if __name__ == "__main__":
+
+    main()
