@@ -27,11 +27,10 @@ def main(tick_time: float = 1):
 
 
 
-
-    # ------- Run behavior tree, node by node -------
-    # First, show the user the behavior tree, before running
+    # First, show the user the behavior tree
     print(py_trees.display.unicode_tree(root=root, show_status=True))
     
+
     # Get user input to decide which behavior to add
     print("1. Knock on door")
     print("2. Sound siren")
@@ -45,15 +44,14 @@ def main(tick_time: float = 1):
     elif behavior_choice == "3":
         new_behavior = py_trees.behaviours.Dummy(name="turn_around")
 
-    index = 1
 
     print("\n")
+    index = 1
     for x in root.children:
         print(f"{index}. {x.name}")
         index += 1
-
-    index_choice = input("Enter1 the number of which behavior to place the new behavior in front of: ")
-
+    # Get user to decide where to place new behavior in the tree
+    index_choice = input("Enter the number of which behavior to place the new behavior in front of: ")
 
     if index_choice:
         # Insert the chosen behavior into the tree
