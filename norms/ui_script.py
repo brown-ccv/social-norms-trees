@@ -12,7 +12,7 @@ def main(tick_time: float = 1):
     root = py_trees.composites.Sequence(name="Sequence", memory=False)
 
     #approach_door
-    approach_door = py_trees.behaviours.Success(name="approach_door")
+    approach_door = py_trees.behaviours.Dummy(name="approach_door")
 
     #go_through_door
     go_through_door = py_trees.behaviours.Dummy(name="go_through_door")
