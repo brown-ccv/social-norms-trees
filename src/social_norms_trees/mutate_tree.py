@@ -1,33 +1,12 @@
 """Example of using worlds with just an integer for the state of the world"""
 
 import warnings
-from dataclasses import dataclass, field, replace
 from functools import partial, wraps
 from itertools import islice
 from typing import TypeVar, Optional, List
 
 import click
 import py_trees
-
-from social_norms_trees.chat import (
-    World,
-    update_behavior,
-    main,
-)
-
-from pprint import pformat
-
-
-@dataclass
-class BehaviorTreeWorld(World):
-    tree: py_trees.behaviour.Behaviour = field(
-        default_factory=py_trees.behaviours.Dummy
-    )
-
-
-def print_world(world: BehaviorTreeWorld):
-    tree_display = py_trees.display.unicode_tree(world.tree)
-    print(f"{pformat(world)}\n\ntree:\n{tree_display}")
 
 
 T = TypeVar("T", bound=py_trees.behaviour.Behaviour)
@@ -421,7 +400,6 @@ def exchange_nodes(
 
 if __name__ == "__main__":
 
-    # main(world_)
     tree = py_trees.composites.Sequence(
         "",
         False,
@@ -453,13 +431,5 @@ if __name__ == "__main__":
     move_node(tree)
     exchange_nodes(tree)
     remove_node(tree)
-
     print(format_tree_with_indices(tree))
 
-    pass
-
-    world_ = BehaviorTreeWorld(
-        behavior=[print_world, update_behavior, add_child],
-        available_behaviors=[print_world, add_child],
-    )
-    print_world(world_)
