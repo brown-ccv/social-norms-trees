@@ -30,11 +30,16 @@ def main(tick_time: float = 1):
     # First, show the user the behavior tree
     print(py_trees.display.unicode_tree(root=root, show_status=True))
     
-
+    #TODO: place these actions into a library of pre-defined actions
+    # - a list of strings of actions
+    # - this will also include the actions already defined in this tree, approach, go, open door 
+    # - this list should update dynamically based on the context and what action is applicable
+    
     # Get user input to decide which behavior to add
     print("1. Knock on door")
     print("2. Sound siren")
     print("3. Turn around")
+    print("4. Wait for an answer")
     behavior_choice = input("Enter the number of which behavior to add to the tree: ")
 
     if behavior_choice == "1":
