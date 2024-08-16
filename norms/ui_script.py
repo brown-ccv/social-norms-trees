@@ -1,9 +1,10 @@
 import argparse
 import sys
 import py_trees
+from action_library import action_library_2
 
 
-def main(tick_time: float = 1):
+def main():
     """
         tick_time: time between each node
     """
@@ -11,16 +12,7 @@ def main(tick_time: float = 1):
 
     root = py_trees.composites.Sequence(name="Sequence", memory=False)
 
-    #approach_door
-    approach_door = py_trees.behaviours.Dummy(name="approach_door")
-
-    #go_through_door
-    go_through_door = py_trees.behaviours.Dummy(name="go_through_door")
-
-    #open_door 
-    open_door = py_trees.behaviours.Dummy(name="open_door")
-
-    root.add_children([approach_door, open_door, go_through_door])
+    root.add_children([py_trees.behaviours.Dummy(name=action) for action in action_library_2["test_tree_1"].values()])
 
     behaviour_tree = py_trees.trees.BehaviourTree(root)
 
@@ -36,19 +28,11 @@ def main(tick_time: float = 1):
     # - this list should update dynamically based on the context and what action is applicable
     
     # Get user input to decide which behavior to add
-    print("1. Knock on door")
-    print("2. Sound siren")
-    print("3. Turn around")
-    print("4. Wait for an answer")
-    behavior_choice = input("Enter the number of which behavior to add to the tree: ")
+    for key, action in action_library_2["additional_actions"].items():
+        print(f"{key}. {action}")         
+    choice_index = input("Enter the number of which behavior to add to the tree: ")
 
-    if behavior_choice == "1":
-        new_behavior = py_trees.behaviours.Dummy(name="knock_on_door")
-    elif behavior_choice == "2":
-        new_behavior = py_trees.behaviours.Dummy(name="sound_siren")
-    elif behavior_choice == "3":
-        new_behavior = py_trees.behaviours.Dummy(name="turn_around")
-
+    new_behavior = action_library_2["additional_actions"][int(choice_index)]
 
     print("\n")
     index = 1
@@ -60,10 +44,10 @@ def main(tick_time: float = 1):
 
     if index_choice:
         # Insert the chosen behavior into the tree
-        root.insert_child(new_behavior, int(index_choice)-1)
+        root.insert_child(py_trees.behaviours.Dummy(name=new_behavior), int(index_choice)-1)
 
     
-
+ 
     print("\nUpdated behavior tree:")
     print(py_trees.display.unicode_tree(root=root, show_status=True))
 
