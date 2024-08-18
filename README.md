@@ -25,4 +25,4 @@ pip install py_trees
 ```
 
 5. Now you can navigate to the file you want to run, and press the triangle play button to run the py_tree file. 
-
+<img width="855" alt="Screenshot 2024-08-18 at 5 19 35 PM" src="https://github.com/user-attachments/assets/2589d42b-8376-447a-938d-7de3ecd5e82d">
