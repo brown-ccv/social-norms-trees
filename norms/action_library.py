@@ -49,3 +49,12 @@ test_tree_1 = [1,2,3]
 additional_actions = [4,5,6,7]
 
 
+#Sample action library v3
+class Action:
+    def __init__(self, name, type):
+        self.name = name
+        self.type = type
+
+#condition nodes
+
+#action nodes
