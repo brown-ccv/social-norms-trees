@@ -50,11 +50,73 @@ additional_actions = [4,5,6,7]
 
 
 #Sample action library v3
-class Action:
+class Task:
     def __init__(self, name, type):
         self.name = name
-        self.type = type
+        self.taskType = type
+    
+    def displayName(self):
+        print(self.name)
 
-#condition nodes
+class ActionTask(Task):
+    def __init__(self, name):
+        super().__init__(name, "action")
 
-#action nodes
+class ConditionalTask(Task):
+    def __init__(self, name, condition):
+        super().__init__(name, "conditional")
+        self.condition = condition
+
+
+open_door = ActionTask("Open Door")
+grab_container = ActionTask("Grab Container")
+battery_check = ConditionalTask("Check Battery", True)
+
+class TaskLibrary:
+    def __init__(self):
+        self.actions = []
+        self.conditionals = []
+        self.composites = []
+        self.decorators = []
+    
+    def add_action_task(self, task):
+        self.actions.append(task)
+    
+    def add_conditional_task(self, task):
+        self.conditionals.append(task)
+    
+    def get_task_by_type(self, type):
+        if type.lower() == "action":
+            return self.actions
+        elif type.lower() == "conditional":
+            return self.conditionals
+        elif type.lower() == "composite":
+            return self.composites
+        elif type.lower() == "decorator":
+            return self.decorators
+        else:
+            return
+
+#Four types of tasks 
+# - action
+#   - alter the state of the game in some way
+#   - Ex. open door
+#   - Ex. grab container
+
+# - conditional
+#   - test some property of the game
+#   - Ex. check the robot battery % 
+#   - Ex. check if patient is in the room
+#   - Paired with action task, only run action task if conditional task is true
+
+
+# - composite
+#   - a parent task that holds a list of child tasks. 
+#   - Sequence and parallel tasks are both composite
+#   - Sequence = run each task once until all tasks have been run
+#   - Parallel = run all children tasks at the same time
+
+
+# - decorator
+#   - a parent task that can only have one child
+#   - function is to modify the behavior of the child task
