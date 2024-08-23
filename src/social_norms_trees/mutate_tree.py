@@ -400,6 +400,7 @@ def exchange_nodes(
 
 if __name__ == "__main__":
 
+    
     tree = py_trees.composites.Sequence(
         "",
         False,
@@ -432,4 +433,5 @@ if __name__ == "__main__":
     exchange_nodes(tree)
     remove_node(tree)
     print(format_tree_with_indices(tree))
+    print("Done with demo!")
 
