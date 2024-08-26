@@ -3,7 +3,7 @@ import py_trees
 #Sample action library v1
 
 action_library_1 = {
-    "test_tree_1": {
+    "hospital_context": {
         "approach_door": py_trees.behaviours.Dummy(name="approach_door"),
         "open_door": py_trees.behaviours.Dummy(name="open_door"),
         "go_through_door": py_trees.behaviours.Dummy(name="go_through_door"),
@@ -20,7 +20,7 @@ action_library_1 = {
 #Sample action library v2
 
 action_library_2 = {
-    "test_tree_1": {
+    "hospital_context": {
         1: "approach_door",
         2: "open_door",
         3: "go_through_door",
@@ -45,7 +45,7 @@ action_library_3 = {
     6: "turn_around",
     7: "wait_for_answer",
 }
-test_tree_1 = [1,2,3]
+hospital_context = [1,2,3]
 additional_actions = [4,5,6,7]
 
 
