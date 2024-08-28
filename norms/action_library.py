@@ -50,7 +50,7 @@ additional_actions = [4,5,6,7]
 
 
 #Sample action library v3
-class Task:
+class Node:
     def __init__(self, name, type):
         self.name = name
         self.taskType = type
@@ -58,31 +58,31 @@ class Task:
     def displayName(self):
         print(self.name)
 
-class ActionTask(Task):
+class ActionNode(Task):
     def __init__(self, name):
         super().__init__(name, "action")
 
-class ConditionalTask(Task):
+class ConditionalNode(Task):
     def __init__(self, name, condition):
         super().__init__(name, "conditional")
         self.condition = condition
 
 
-open_door = ActionTask("Open Door")
-grab_container = ActionTask("Grab Container")
-battery_check = ConditionalTask("Check Battery", True)
+open_door = ActionNode("Open Door")
+grab_container = ActionNode("Grab Container")
+battery_check = ConditionalNode("Check Battery", True)
 
-class TaskLibrary:
+class NodeLibrary:
     def __init__(self):
         self.actions = []
         self.conditionals = []
         self.composites = []
         self.decorators = []
     
-    def add_action_task(self, task):
+    def add_action_node(self, task):
         self.actions.append(task)
     
-    def add_conditional_task(self, task):
+    def add_conditional_node(self, task):
         self.conditionals.append(task)
     
     def get_task_by_type(self, type):
