@@ -144,7 +144,7 @@ def format_children_with_indices(composite: py_trees.composites.Composite) -> st
     return output
 
 
-def format_tree_with_indices(tree: py_trees.behaviour.Behaviour) -> str:
+def format_tree_with_indices(tree: py_trees.behaviour.Behaviour, mode: str = "all") -> str:
     """
     Examples:
         >>> print(format_tree_with_indices(py_trees.behaviours.Dummy()))
@@ -172,8 +172,20 @@ def format_tree_with_indices(tree: py_trees.behaviour.Behaviour) -> str:
         7:         --> p
 
     """
+    index_strings = []
+    index = 0
+    for i, node in enumerate_nodes(tree):
+        if mode == "children" and node.children:
+            # Do not number parent nodes in 'children' mode
+            index_strings.append('_')
+        elif mode == "parents" and not node.children:
+            # Do not number child nodes in 'parents' mode
+            index_strings.append('_')
+        else:
+            # Number all nodes in 'all' mode
+            index_strings.append(str(index))
+        index += 1
 
-    index_strings = [str(i) for i, _ in enumerate_nodes(tree)]
 
     output = label_tree_lines(tree, index_strings)
 
@@ -188,9 +200,10 @@ def prompt_identify_node(
     tree: py_trees.behaviour.Behaviour,
     message: str = "Which node?",
     display_nodes: bool = True,
+    mode: str = "all"
 ) -> py_trees.behaviour.Behaviour:
     node_index = prompt_identify_tree_iterator_index(
-        tree=tree, message=message, display_nodes=display_nodes
+        tree=tree, message=message, display_nodes=display_nodes, mode=mode
     )
     node = next(islice(iterate_nodes(tree), node_index, node_index + 1))
     return node
@@ -200,9 +213,10 @@ def prompt_identify_tree_iterator_index(
     tree: py_trees.behaviour.Behaviour,
     message: str = "Which position?",
     display_nodes: bool = True,
+    mode: str = "all"
 ) -> int:
     if display_nodes:
-        text = f"{format_tree_with_indices(tree)}\n{message}"
+        text = f"{format_tree_with_indices(tree, mode)}\n{message}"
     else:
         text = f"{message}"
     node_index = click.prompt(
@@ -288,7 +302,7 @@ def remove_node(tree: T, node: Optional[py_trees.behaviour.Behaviour] = None) ->
 
     """
     if node is None:
-        node = prompt_identify_node(tree, f"Which node do you want to remove?")
+        node = prompt_identify_node(tree, f"Which node do you want to remove?", True, "children")
     parent_node = node.parent
     if parent_node is None:
         warnings.warn(
