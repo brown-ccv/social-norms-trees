@@ -50,52 +50,40 @@ additional_actions = [4,5,6,7]
 
 
 #Sample action library v3
-class Node:
-    def __init__(self, name, type):
+class Action:
+    def __init__(self, name, deontic_force):
         self.name = name
-        self.taskType = type
+        self.deontic_force = deontic_force
+        self.tags = []
     
-    def displayName(self):
-        print(self.name)
+    def set_deontic_force(self, df):
+        self.deontic_force = df
 
-class ActionNode(Task):
-    def __init__(self, name):
-        super().__init__(name, "action")
+    def get_tags(self):
+        return self.tags
 
-class ConditionalNode(Task):
-    def __init__(self, name, condition):
-        super().__init__(name, "conditional")
-        self.condition = condition
+    def add_tags(self, tag):
+        self.tags.append(tag)
+
+
+
 
 
 open_door = ActionNode("Open Door")
 grab_container = ActionNode("Grab Container")
-battery_check = ConditionalNode("Check Battery", True)
 
 class NodeLibrary:
     def __init__(self):
         self.actions = []
-        self.conditionals = []
-        self.composites = []
-        self.decorators = []
     
-    def add_action_node(self, task):
+    def add_action(self, task):
         self.actions.append(task)
     
-    def add_conditional_node(self, task):
-        self.conditionals.append(task)
     
-    def get_task_by_type(self, type):
-        if type.lower() == "action":
-            return self.actions
-        elif type.lower() == "conditional":
-            return self.conditionals
-        elif type.lower() == "composite":
-            return self.composites
-        elif type.lower() == "decorator":
-            return self.decorators
-        else:
-            return
+    def get_actions(self):
+        return self.actions
+
+
 
 #Four types of tasks 
 # - action
