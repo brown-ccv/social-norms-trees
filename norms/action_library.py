@@ -51,9 +51,9 @@ additional_actions = [4,5,6,7]
 
 #Sample action library v3
 class Action:
-    def __init__(self, name, deontic_force):
+    def __init__(self, name):
         self.name = name
-        self.deontic_force = deontic_force
+        self.deontic_force = 0
         self.tags = []
     
     def set_deontic_force(self, df):
@@ -83,6 +83,12 @@ class NodeLibrary:
     def get_actions(self):
         return self.actions
 
+
+
+
+
+
+# Example of tags that could be useful.
 
 
 #Four types of tasks 
