@@ -8,6 +8,8 @@ from typing import TypeVar, Optional, List
 import click
 import py_trees
 
+from serialize_tree import serialize_tree, deserialize_tree
+import json
 
 T = TypeVar("T", bound=py_trees.behaviour.Behaviour)
 
@@ -412,9 +414,21 @@ def exchange_nodes(
     return tree
 
 
+
+def run_experiment(participant_id, round_number, experiment_tree):
+    move_node(experiment_tree)
+
+    serialized_tree = serialize_tree(experiment_tree)
+    if participant_id not in tree_history:
+        tree_history[participant_id] = {}
+
+    tree_history[participant_id][round_number] = serialized_tree
+
+
+
 if __name__ == "__main__":
 
-    
+
     tree = py_trees.composites.Sequence(
         "",
         False,
@@ -442,10 +456,19 @@ if __name__ == "__main__":
         ],
     )
 
-    print(py_trees.display.ascii_tree(tree))
-    move_node(tree)
-    exchange_nodes(tree)
-    remove_node(tree)
-    print(format_tree_with_indices(tree))
-    print("Done with demo!")
+    tree_history = {
+        "original_tree": serialize_tree(tree)
+    }
+
+
+    for x in range(2):
+        print("_____________________\n")
+
+        original_tree = deserialize_tree(tree_history["original_tree"])
+
+        run_experiment("1234", x+1, original_tree)
+    
+    print("\n EXPERIMENT DONE \n")
+
+    print(json.dumps(tree_history, indent=4))
 
