@@ -20,6 +20,7 @@ def experiment_setup():
 
     return participant_id, origin_tree, experiment_id
 
+
 def participant_login():
     global db
 
@@ -31,7 +32,6 @@ def participant_login():
     return participant_id
 
 
-
 def get_behavior_trees():
     #TODO: Get behavior trees from respective data structure
 
@@ -39,12 +39,12 @@ def get_behavior_trees():
 
     return ["Original_tree"]
 
+
 def load_behavior_tree():
     
     tree_array = get_behavior_trees()
     tree_index = click.prompt("Please select a behavior tree to load for the experiment (enter the number)", type=int)
     return tree_array[tree_index - 1]
-
 
 
 def initialize_experiment_record(participant_id, origin_tree):
@@ -77,9 +77,6 @@ def run_experiment(participant_id, origin_tree, experiment_id):
     time.sleep(3)
     db[participant_id]["experiments"][experiment_id]["end_date"] = datetime.now().isoformat()
     print("Experiment done!\n")
-
-
-
 
 
 def main():
