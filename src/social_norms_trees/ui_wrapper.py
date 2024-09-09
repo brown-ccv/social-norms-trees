@@ -117,7 +117,11 @@ def run_experiment(db, participant_id, origin_tree, experiment_id):
     run_simulation = True
     while(run_simulation):
 
-        user_choice = click.prompt("Would you like to perform an action on the behavior tree? (y/n)")
+        user_choice = click.prompt(
+            "Would you like to perform an action on the behavior tree?",
+            show_choices=True,
+            type=click.Choice(['y', 'n'], case_sensitive=False),
+        )
     
         if user_choice == 'y':
             print("1. move node")
