@@ -34,7 +34,9 @@ def experiment_setup(db):
 
     print("\n")
     origin_tree = load_behavior_tree()
-
+    print(origin_tree)
+    
+    print("\n")
     experiment_id = initialize_experiment_record(db, participant_id, origin_tree)
 
     print("\nSetup Complete.\n")
@@ -49,45 +51,68 @@ def participant_login():
     return participant_id
 
 
-def get_behavior_trees():
-    #TODO: Get behavior trees from respective data structure
+# def get_behavior_trees():
+#     #TODO: Get behavior trees from respective data structure
 
-    print("1. Original Tree")
-    return [
-        py_trees.composites.Sequence(
-            "",
-            False,
-            children=[
-                py_trees.behaviours.Dummy(),
-                py_trees.behaviours.Dummy(),
-                py_trees.composites.Sequence(
-                    "",
-                    False,
-                    children=[
-                        py_trees.behaviours.Success(),
-                        py_trees.behaviours.Dummy(),
-                    ],
-                ),
-                py_trees.composites.Sequence(
-                    "",
-                    False,
-                    children=[
-                        py_trees.behaviours.Dummy(),
-                        py_trees.behaviours.Failure(),
-                        py_trees.behaviours.Dummy(),
-                        py_trees.behaviours.Running(),
-                    ],
-                ),
-            ],
-        )
-    ]
+#     print("1. Original Tree")
+    
+behavior_trees =  {
+    "tree_1": {
+        "name": "Sequence A",
+        "children": [
+            {
+                "name": "Action A",
+                "children": []
+            },
+            {
+                "name": "Action B",
+                "children": []
+            },
+            {
+                "name": "Sequence B",
+                "children": [
+                    {
+                        "name": "Action C",
+                        "children": []
+                    },
+                    {
+                        "name": "Action D",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "name": "Sequence C",
+                "children": [
+                    {
+                        "name": "Action E",
+                        "children": []
+                    },
+                    {
+                        "name": "Action F",
+                        "children": []
+                    },
+                    {
+                        "name": "Action G",
+                        "children": []
+                    },
+                    {
+                        "name": "Action H",
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    },
+}
 
 
 def load_behavior_tree():
-    
-    tree_array = get_behavior_trees()
+    for idx, tree_name in enumerate(behavior_trees.keys(), 1):
+        print(f"{idx}. {tree_name}")    
+
     tree_index = click.prompt("Please select a behavior tree to load for the experiment (enter the number)", type=int)
-    return tree_array[tree_index - 1]
+    return behavior_trees[f"tree_{tree_index}"]
 
 
 def initialize_experiment_record(db, participant_id, origin_tree):
@@ -96,8 +121,6 @@ def initialize_experiment_record(db, participant_id, origin_tree):
 
     #TODO: look into python data class
 
-    #TODO: flatten structure of db to simply collction of experiment runs, that will include a field for the participant_id
-    #instead of grouping by participants
     experiment_record = {
         "experiment_id": experiment_id,
         "participant_id": participant_id,
