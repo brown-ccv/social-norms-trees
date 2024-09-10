@@ -140,6 +140,21 @@ def format_children_with_indices(composite: py_trees.composites.Composite) -> st
         else:
             index_strings.append("_")
 
+    index_strings.append(str(i))
+
+    output = label_tree_lines(composite, index_strings)
+    return output
+
+def format_parents_with_indices(composite: py_trees.composites.Composite) -> str:
+    index_strings = []
+    i = 0
+    for b in iterate_nodes(composite):
+        if b.children:
+            index_strings.append(str(i))
+        else:
+            index_strings.append("_")
+        i += 1
+
     output = label_tree_lines(composite, index_strings)
     return output
 
@@ -202,6 +217,23 @@ def prompt_identify_node(
     node_index = prompt_identify_tree_iterator_index(
         tree=tree, message=message, display_nodes=display_nodes, show_root=show_root
     )
+    node = next(islice(iterate_nodes(tree), node_index, node_index + 1))
+    return node
+
+def prompt_identify_parent_node(
+    tree: py_trees.behaviour.Behaviour,
+    message: str = "Which position?",
+    display_nodes: bool = True,
+) -> int:
+    if display_nodes:
+        text = f"{format_parents_with_indices(tree)}\n{message}"
+    else:
+        text = f"{message}"
+    node_index = click.prompt(
+        text=text,
+        type=int,
+    )
+    
     node = next(islice(iterate_nodes(tree), node_index, node_index + 1))
     return node
 
@@ -329,8 +361,8 @@ def move_node(
     if node is None:
         node = prompt_identify_node(tree, f"Which node do you want to move?")
     if new_parent is None:
-        new_parent = prompt_identify_node(
-            tree, f"What should its parent be?", display_nodes=True, show_root=True
+        new_parent = prompt_identify_parent_node(
+            tree, f"What should its parent be?", display_nodes=True
         )
     if index is None:
         index = prompt_identify_child_index(new_parent)
