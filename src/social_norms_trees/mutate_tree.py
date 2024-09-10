@@ -144,7 +144,10 @@ def format_children_with_indices(composite: py_trees.composites.Composite) -> st
     return output
 
 
-def format_tree_with_indices(tree: py_trees.behaviour.Behaviour) -> str:
+def format_tree_with_indices(
+        tree: py_trees.behaviour.Behaviour,
+        show_root: bool = False,
+) -> str:
     """
     Examples:
         >>> print(format_tree_with_indices(py_trees.behaviours.Dummy()))
@@ -173,8 +176,14 @@ def format_tree_with_indices(tree: py_trees.behaviour.Behaviour) -> str:
 
     """
 
-    index_strings = [str(i) for i, _ in enumerate_nodes(tree)]
-
+    index_strings = []
+    index = 0
+    for i, node in enumerate_nodes(tree):
+        if i == 0 and not show_root:
+            index_strings.append('_')
+        else:
+            index_strings.append(str(index))
+        index += 1
     output = label_tree_lines(tree, index_strings)
 
     return output
@@ -188,9 +197,10 @@ def prompt_identify_node(
     tree: py_trees.behaviour.Behaviour,
     message: str = "Which node?",
     display_nodes: bool = True,
+    show_root: bool = False,
 ) -> py_trees.behaviour.Behaviour:
     node_index = prompt_identify_tree_iterator_index(
-        tree=tree, message=message, display_nodes=display_nodes
+        tree=tree, message=message, display_nodes=display_nodes, show_root=show_root
     )
     node = next(islice(iterate_nodes(tree), node_index, node_index + 1))
     return node
@@ -200,9 +210,10 @@ def prompt_identify_tree_iterator_index(
     tree: py_trees.behaviour.Behaviour,
     message: str = "Which position?",
     display_nodes: bool = True,
+    show_root: bool = False,
 ) -> int:
     if display_nodes:
-        text = f"{format_tree_with_indices(tree)}\n{message}"
+        text = f"{format_tree_with_indices(tree, show_root)}\n{message}"
     else:
         text = f"{message}"
     node_index = click.prompt(
@@ -319,7 +330,7 @@ def move_node(
         node = prompt_identify_node(tree, f"Which node do you want to move?")
     if new_parent is None:
         new_parent = prompt_identify_node(
-            tree, f"What should its parent be?", display_nodes=False
+            tree, f"What should its parent be?", display_nodes=True, show_root=True
         )
     if index is None:
         index = prompt_identify_child_index(new_parent)
