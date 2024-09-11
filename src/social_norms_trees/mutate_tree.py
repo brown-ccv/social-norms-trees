@@ -337,12 +337,15 @@ def remove_node(tree: T, node: Optional[py_trees.behaviour.Behaviour] = None) ->
         warnings.warn(
             f"{node}'s parent is None, so we can't remove it. You can't remove the root node."
         )
-        return tree
+        action_log = "no node removed"
+        return tree, action_log
     elif isinstance(parent_node, py_trees.composites.Composite):
         parent_node.remove_child(node)
+        action_log = f"node {node.id} removed"
     else:
         raise NotImplementedError()
-    return tree
+    
+    return tree, action_log
 
 
 def move_node(
@@ -373,7 +376,9 @@ def move_node(
     node.parent.remove_child(node)
     new_parent.insert_child(node, index)
 
-    return tree
+
+    action_log = f"node {node.id} moved"
+    return tree, action_log
 
 
 def exchange_nodes(
@@ -435,7 +440,9 @@ def exchange_nodes(
     node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
     node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
 
-    tree = move_node(tree, node0, node1_parent, node1_index)
-    tree = move_node(tree, node1, node0_parent, node0_index)
+    tree, _ = move_node(tree, node0, node1_parent, node1_index)
+    tree, _ = move_node(tree, node1, node0_parent, node0_index)
 
-    return tree
+    action_log = f"node {node0.id} and node {node1.id} exchanged"
+
+    return tree, action_log

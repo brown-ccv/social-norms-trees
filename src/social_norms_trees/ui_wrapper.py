@@ -9,6 +9,8 @@ import py_trees
 from social_norms_trees.mutate_tree import move_node, exchange_nodes, remove_node
 from social_norms_trees.serialize_tree import serialize_tree, deserialize_tree
 
+from social_norms_trees.action_library import ActionLibrary
+
 DB_FILE = "db.json"
 
 
@@ -27,16 +29,14 @@ def save_db(db, db_file):
     with open(db_file, "w") as f:
         json.dump(db, f, indent=4)
 
-def experiment_setup(db):
+def experiment_setup(db, action_library):
 
     print("\n")
     participant_id = participant_login()
 
     print("\n")
-    origin_tree = load_behavior_tree()
-    print(origin_tree)
-    
-    print("\n")
+    origin_tree = load_behavior_tree(action_library)
+
     experiment_id = initialize_experiment_record(db, participant_id, origin_tree)
 
     print("\nSetup Complete.\n")
@@ -59,45 +59,56 @@ def participant_login():
 behavior_trees =  {
     "tree_1": {
         "name": "Sequence A",
+        "type": "Sequence",
         "children": [
             {
                 "name": "Action A",
+                "type": "Action",
                 "children": []
             },
             {
                 "name": "Action B",
+                "type": "Action",
                 "children": []
             },
             {
                 "name": "Sequence B",
+                "type": "Sequence",
                 "children": [
                     {
                         "name": "Action C",
+                        "type": "Action",
                         "children": []
                     },
                     {
                         "name": "Action D",
+                        "type": "Action",
                         "children": []
                     }
                 ]
             },
             {
                 "name": "Sequence C",
+                "type": "Sequence",
                 "children": [
                     {
                         "name": "Action E",
+                        "type": "Action",
                         "children": []
                     },
                     {
                         "name": "Action F",
+                        "type": "Action",
                         "children": []
                     },
                     {
                         "name": "Action G",
+                        "type": "Action",
                         "children": []
                     },
                     {
                         "name": "Action H",
+                        "type": "Action",
                         "children": []
                     }
                 ]
@@ -107,12 +118,17 @@ behavior_trees =  {
 }
 
 
-def load_behavior_tree():
+def load_behavior_tree(action_library):
     for idx, tree_name in enumerate(behavior_trees.keys(), 1):
         print(f"{idx}. {tree_name}")    
 
-    tree_index = click.prompt("Please select a behavior tree to load for the experiment (enter the number)", type=int)
-    return behavior_trees[f"tree_{tree_index}"]
+    selected_index = click.prompt("Please select a behavior tree to load for the experiment (enter the number)", type=int)
+
+    tree_config = behavior_trees[f"tree_{selected_index}"]
+
+    experiment_ready_tree = deserialize_tree(tree_config, action_library)
+
+    return experiment_ready_tree
 
 
 def initialize_experiment_record(db, participant_id, origin_tree):
@@ -126,7 +142,7 @@ def initialize_experiment_record(db, participant_id, origin_tree):
         "participant_id": participant_id,
         "base_behavior_tree": serialize_tree(origin_tree),
         "start_date": datetime.now().isoformat(),
-        "actions": [],
+        "action_history": [],
     }
 
     db[experiment_id] = experiment_record
@@ -159,14 +175,16 @@ def run_experiment(db, participant_id, origin_tree, experiment_id):
             )
 
             if action == "1":
-                db[experiment_id]["actions"].append("move node")
-                move_node(origin_tree)
+                origin_tree, action_log = move_node(origin_tree)
+                db[experiment_id]["action_history"].append(action_log)
             elif action == "2":
-                db[experiment_id]["actions"].append("exchange node")
-                exchange_nodes(origin_tree)
+                origin_tree, action_log = exchange_nodes(origin_tree)
+                db[experiment_id]["action_history"].append(action_log)
+
             elif action == "3":
-                db[experiment_id]["actions"].append("remove node")
-                remove_node(origin_tree)
+                origin_tree, action_log = remove_node(origin_tree)
+                db[experiment_id]["action_history"].append(action_log)
+
             else:
                 print("Invalid choice, please select a valid number (1, 2, or 3).\n")
 
@@ -182,11 +200,13 @@ def run_experiment(db, participant_id, origin_tree, experiment_id):
 def main():
     print("AIT Prototype #1 Simulator")
     
+    action_library = ActionLibrary()
+
     DB_FILE = "db.json"
     db = load_db(DB_FILE)
 
 
-    participant_id, origin_tree, experiment_id = experiment_setup(db)
+    participant_id, origin_tree, experiment_id = experiment_setup(db, action_library)
     db = run_experiment(db, participant_id, origin_tree, experiment_id)
     
     save_db(db, DB_FILE)
