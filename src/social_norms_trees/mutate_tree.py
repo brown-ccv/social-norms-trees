@@ -8,6 +8,8 @@ from typing import TypeVar, Optional, List
 import click
 import py_trees
 
+from datetime import datetime
+
 
 T = TypeVar("T", bound=py_trees.behaviour.Behaviour)
 
@@ -337,11 +339,20 @@ def remove_node(tree: T, node: Optional[py_trees.behaviour.Behaviour] = None) ->
         warnings.warn(
             f"{node}'s parent is None, so we can't remove it. You can't remove the root node."
         )
-        action_log = "no node removed"
-        return tree, action_log
+        action_log = {}
+        return tree,
     elif isinstance(parent_node, py_trees.composites.Composite):
         parent_node.remove_child(node)
-        action_log = f"node {node.id} removed"
+        action_log = {
+            "type": "remove_node",
+            "nodes": [
+                {
+                    "id": node.id,
+                    "nickname": node.nickname
+                },
+            ],
+            "timestamp": datetime.now().isoformat(), 
+         }
     else:
         raise NotImplementedError()
     
@@ -376,8 +387,16 @@ def move_node(
     node.parent.remove_child(node)
     new_parent.insert_child(node, index)
 
-
-    action_log = f"node {node.id} moved"
+    action_log = {
+        "type": "move_node",
+        "nodes": [
+            {
+                "id": node.id,
+                "nickname": node.nickname
+             },
+        ],
+        "timestamp": datetime.now().isoformat(), 
+    }
     return tree, action_log
 
 
@@ -443,6 +462,18 @@ def exchange_nodes(
     tree, _ = move_node(tree, node0, node1_parent, node1_index)
     tree, _ = move_node(tree, node1, node0_parent, node0_index)
 
-    action_log = f"node {node0.id} and node {node1.id} exchanged"
-
+    action_log = {
+        "type": "exchange_nodes",
+        "nodes": [
+            {
+                "id": node0.id,
+                "nickname": node0.nickname
+             },
+            {
+                "id": node1.id,
+                "nickname": node1.nickname
+             },
+        ],
+        "timestamp": datetime.now().isoformat(), 
+    }
     return tree, action_log
