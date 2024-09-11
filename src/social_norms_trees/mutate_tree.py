@@ -384,6 +384,7 @@ def move_node(
     assert isinstance(new_parent, py_trees.composites.Composite)
     assert isinstance(node.parent, py_trees.composites.Composite)
 
+    old_parent = node.parent.name
     node.parent.remove_child(node)
     new_parent.insert_child(node, index)
 
@@ -392,7 +393,9 @@ def move_node(
         "nodes": [
             {
                 "id": node.id,
-                "nickname": node.nickname
+                "nickname": node.nickname,
+                "old parent": old_parent,
+                "new parent": node.parent.name
              },
         ],
         "timestamp": datetime.now().isoformat(), 
