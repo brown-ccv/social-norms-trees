@@ -347,7 +347,7 @@ def remove_node(tree: T, node: Optional[py_trees.behaviour.Behaviour] = None) ->
             "type": "remove_node",
             "nodes": [
                 {
-                    "id": node.id,
+                    "id_": node.id_,
                     "nickname": node.nickname
                 },
             ],
@@ -364,6 +364,7 @@ def move_node(
     node: Optional[py_trees.behaviour.Behaviour] = None,
     new_parent: Optional[py_trees.behaviour.Behaviour] = None,
     index: int = None,
+    internal_call: bool = False,
 ) -> T:
     """Exchange two behaviours in the tree
 
@@ -384,23 +385,25 @@ def move_node(
     assert isinstance(new_parent, py_trees.composites.Composite)
     assert isinstance(node.parent, py_trees.composites.Composite)
 
-    old_parent = node.parent.name
+    # old_parent = node.parent.name
     node.parent.remove_child(node)
     new_parent.insert_child(node, index)
 
-    action_log = {
-        "type": "move_node",
-        "nodes": [
-            {
-                "id": node.id,
-                "nickname": node.nickname,
-                "old parent": old_parent,
-                "new parent": node.parent.name
-             },
-        ],
-        "timestamp": datetime.now().isoformat(), 
-    }
-    return tree, action_log
+
+    if not internal_call:
+        action_log = {
+            "type": "move_node",
+            "nodes": [
+                {
+                    "id": node.id_,
+                    "nickname": node.nickname,
+                },
+            ],
+            "timestamp": datetime.now().isoformat(), 
+        }
+        return tree, action_log
+        
+    return tree
 
 
 def exchange_nodes(
@@ -462,21 +465,41 @@ def exchange_nodes(
     node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
     node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
 
-    tree, _ = move_node(tree, node0, node1_parent, node1_index)
-    tree, _ = move_node(tree, node1, node0_parent, node0_index)
+    tree = move_node(tree, node0, node1_parent, node1_index, True)
+    tree = move_node(tree, node1, node0_parent, node0_index, True)
+
+    nodes = []
+    if node0.__class__.__name__ != "CustomBehavior":
+        nodes.append(
+            {
+                "nickname": node0.name,
+            }
+        )
+    else:
+        nodes.append(
+            {
+                "id": node0.id_,
+                "nickname": node0.nickname
+            }
+        )
+    
+    if node1.__class__.__name__ != "CustomBehavior":
+        nodes.append(
+            {
+                "nickname": node1.name,
+            }
+        )
+    else:
+        nodes.append(
+            {
+                "id": node1.id_,
+                "nickname": node1.nickname
+            }
+        )
 
     action_log = {
         "type": "exchange_nodes",
-        "nodes": [
-            {
-                "id": node0.id,
-                "nickname": node0.nickname
-             },
-            {
-                "id": node1.id,
-                "nickname": node1.nickname
-             },
-        ],
+        "nodes": nodes,
         "timestamp": datetime.now().isoformat(), 
     }
     return tree, action_log

@@ -1,69 +1,73 @@
-class ActionLibrary:
+class BehaviorLibrary:
     def __init__(self):
-        self.actions = {
-            "Action A": {
+        self.behaviors = {
+            "Behavior A": {
                 "id": "001",
-                "nickname": "Action A",
+                "nickname": "Behavior A",
                 "type": "Dummy",
             },
-            "Action B": {
+            "Behavior B": {
                 "id": "002",
-                "nickname": "Action B",
+                "nickname": "Behavior B",
                 "type": "Dummy",
             },
-            "Action C": {
+            "Behavior C": {
                 "id": "003",
-                "nickname": "Action C",
+                "nickname": "Behavior C",
                 "type": "Dummy",
             },
-            "Action D": {
+            "Behavior D": {
                 "id": "004",
-                "nickname": "Action D",
+                "nickname": "Behavior D",
                 "type": "Dummy",
             },
-            "Action E": {
+            "Behavior E": {
                 "id": "005",
-                "nickname": "Action E",
+                "nickname": "Behavior E",
                 "type": "Dummy",
             },
-            "Action F": {
+            "Behavior F": {
                 "id": "006",
-                "nickname": "Action F",
+                "nickname": "Behavior F",
                 "type": "Dummy",
             },
-            "Action G": {
+            "Behavior G": {
                 "id": "007",
-                "nickname": "Action G",
+                "nickname": "Behavior G",
                 "type": "Dummy",
             },
-            "Action H": {
+            "Behavior H": {
                 "id": "008",
-                "nickname": "Action H",
+                "nickname": "Behavior H",
                 "type": "Dummy",
             },
 
-            "Action I": {
+            # these will be the new behaviors that will be possible to "add"
+            # as part of new action4 , "add node"
+            # TODO: for now, show all actions, and user will just choose the new acton to add
+
+            "Behavior I": {
                 "id": "009",
-                "nickname": "Action I",
+                "nickname": "Behavior I",
                 "type": "Dummy",
             },
-            "Action J": {
+            "Behavior J": {
                 "id": "010",
-                "nickname": "Action J",
+                "nickname": "Behavior J",
                 "type": "Dummy",
             },
-            "Action K": {
+            "Behavior K": {
                 "id": "011",
-                "nickname": "Action K",
+                "nickname": "Behavior K",
                 "type": "Dummy",
             },
         }
 
-    def get_action_by_nickname(self, nickname):
-        return self.actions.get(nickname)
+    def get_behavior_by_nickname(self, nickname):
+        return self.behaviors.get(nickname)
 
-    def get_action_by_id(self, id):
-        for action in self.actions.values():
-            if action.id == id:
-                return action
+    def get_behavior_by_id(self, id):
+        for behavior in self.behaviors.values():
+            if behavior.id == id:
+                return behavior
         return None
