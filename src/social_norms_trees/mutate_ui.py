@@ -1,24 +1,23 @@
 from typing import Tuple, TypeVar
 import py_trees
 
-T = TypeVar("T", bound=py_trees.behaviour.Behaviour)
 U = TypeVar("U", bound=py_trees.behaviour.Behaviour)
-V = TypeVar("V", bound=py_trees.behaviour.Behaviour)
-C = TypeVar("C", bound=py_trees.composites.Composite)
+CompositeIndex = Tuple[py_trees.composites.Composite, int]
 
-def remove_node(tree: T, node: U) -> Tuple[T, U]:
+
+def remove(node: U) -> U:
     """Remove a behaviour from the tree
 
     Examples:
         >>> tree = py_trees.composites.Sequence("", False, children=[
         ...    py_trees.behaviours.Success(),
-        ...    failure_node := py_trees.behaviours.Failure()])
+        ...    failure := py_trees.behaviours.Failure()])
         >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
 
-        >>> tree, removed_node = remove_node(tree, failure_node)
+        >>> removed = remove(failure)
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
@@ -26,19 +25,22 @@ def remove_node(tree: T, node: U) -> Tuple[T, U]:
 
     """
     if node.parent is None:
-        msg = f"%s's parent is None, so we can't remove it. You can't remove the root node." % (node)
+        msg = (
+            f"%s's parent is None, so we can't remove it. You can't remove the root node."
+            % (node)
+        )
         raise ValueError(msg)
     elif isinstance(node.parent, py_trees.composites.Composite):
         node.parent.remove_child(node)
     else:
         raise NotImplementedError()
-    return tree, node
+    return node
 
 
-def insert_node(tree: T, parent: C, index: int, node: py_trees.behaviour.Behaviour) -> T:
+def insert(where: CompositeIndex, node: py_trees.behaviour.Behaviour) -> None:
     """
     Examples:
-        
+
         >>> tree = py_trees.composites.Sequence("", False, children=[
         ...    py_trees.behaviours.Success()
         ... ])
@@ -46,13 +48,15 @@ def insert_node(tree: T, parent: C, index: int, node: py_trees.behaviour.Behavio
         [-]
             --> Success
 
-        >>> print(py_trees.display.ascii_tree(insert_node(tree, tree, 1, py_trees.behaviours.Failure())))
+        >>> insert((tree, 1), py_trees.behaviours.Failure())
+        >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
 
-        >>> print(py_trees.display.ascii_tree(insert_node(tree, tree, 0, py_trees.behaviours.Dummy())))
+        >>> insert((tree, 0), py_trees.behaviours.Dummy())
+        >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Dummy
@@ -60,15 +64,15 @@ def insert_node(tree: T, parent: C, index: int, node: py_trees.behaviour.Behavio
             --> Failure
 
     """
+    parent, index = where
     parent.insert_child(node, index)
-    return tree
+    return
 
-def move_node(
-    tree: T,
-    parent: py_trees.behaviour.Behaviour,
-    index: int,
+
+def move(
+    where: CompositeIndex,
     node: py_trees.behaviour.Behaviour,
-) -> T:
+) -> None:
     """Move a node in the tree
 
     Examples:
@@ -80,42 +84,44 @@ def move_node(
         [-]
             --> Failure
             --> Success
-
-        >>> print(py_trees.display.ascii_tree(tree := move_node(tree, tree, 1, failure_node)))
+        >>> move((tree, 1), failure_node)
+        >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
 
-        >>> print(py_trees.display.ascii_tree(move_node(tree, tree, 1, failure_node)))
+            >>> move((tree, 1), failure_node)
+        >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
-    
+
     """
-    tree_without_node, removed_node = remove_node(tree, node)
-    tree_with_moved_node = insert_node(tree_without_node, parent, index, removed_node)
-    return tree_with_moved_node
+    parent, index = where
+    insert((parent, index), remove(node))
+    return
 
-def exchange_nodes(
-        tree: T,
-        node0: U,
-        node1: V,
-) -> T:
+
+def exchange(
+    node0: py_trees.behaviour.Behaviour,
+    node1: py_trees.behaviour.Behaviour,
+) -> None:
     """Exchange two behaviours in the tree
 
     Examples:
         >>> tree = py_trees.composites.Sequence("", False, children=[
-        ...     s:=py_trees.behaviours.Success(),
-        ...     f:=py_trees.behaviours.Failure(),
+        ...     s := py_trees.behaviours.Success(),
+        ...     f := py_trees.behaviours.Failure(),
         ... ])
         >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
 
-        >>> print(py_trees.display.ascii_tree(exchange_nodes(tree, s, f)))
+        >>> exchange(s, f)
+        >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Failure
@@ -137,7 +143,9 @@ def exchange_nodes(
             [-] B
                 --> Success
                 [-] C
-        >>> print(py_trees.display.ascii_tree(exchange_nodes(tree, a, c)))
+
+        >>> exchange(a, c)
+        >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             [-] C
@@ -150,7 +158,7 @@ def exchange_nodes(
     node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
     node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
 
-    tree = move_node(tree, node1_parent, node1_index, node0)
-    tree = move_node(tree, node0_parent, node0_index, node1)
+    move((node1_parent, node1_index), node0)
+    move((node0_parent, node0_index), node1)
 
-    return tree
+    return
