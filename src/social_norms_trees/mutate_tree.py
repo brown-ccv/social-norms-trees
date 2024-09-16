@@ -10,6 +10,8 @@ import py_trees
 
 from datetime import datetime
 
+from social_norms_trees.custom_node_library import CustomBehavior
+
 
 T = TypeVar("T", bound=py_trees.behaviour.Behaviour)
 
@@ -502,4 +504,62 @@ def exchange_nodes(
         "nodes": nodes,
         "timestamp": datetime.now().isoformat(), 
     }
+    return tree, action_log
+
+
+def prompt_select_node(behavior_library, text):
+
+    for idx, tree_name in enumerate(behavior_library.behaviors.keys(), 1):
+        print(f"{idx}. {tree_name}")    
+
+
+    node_index = click.prompt(
+        text=text,
+        type=int,
+    )
+
+    node_key = list(behavior_library.behaviors.keys())[node_index-1]
+    
+    return behavior_library.behaviors[node_key]
+
+
+def add_node(
+    tree: T,
+    behavior_library: object,
+) -> T:
+    """Exchange two behaviours in the tree
+
+    Examples:
+        >>> tree = py_trees.composites.Sequence("", False, children=[])
+
+    """
+
+    
+    behavior = prompt_select_node(behavior_library, f"Which behavior do you want to add?")
+    
+    new_node = CustomBehavior(
+                    name=behavior['nickname'],
+                    id_=behavior['id'],
+                    nickname=behavior['nickname']
+                )
+    
+    new_parent = prompt_identify_parent_node(
+        tree, f"What should its parent be?", display_nodes=True
+    )
+
+    index = prompt_identify_child_index(new_parent)
+   
+    assert isinstance(new_parent, py_trees.composites.Composite)
+
+    new_parent.insert_child(new_node, index)
+        
+    action_log = {
+        "type": "add_node",
+        "node": {
+                "id": new_node.id_,
+                "nickname": new_node.nickname
+            },
+        "timestamp": datetime.now().isoformat(), 
+    }
+
     return tree, action_log

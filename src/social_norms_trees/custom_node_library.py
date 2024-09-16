@@ -1,9 +1,9 @@
 import py_trees
 
 class CustomBehavior(py_trees.behaviours.Dummy):
-    def __init__(self, name, id, nickname):
+    def __init__(self, name, id_, nickname):
         super().__init__(name)
-        self.id_ = id
+        self.id_ = id_
         self.nickname = nickname
 
 

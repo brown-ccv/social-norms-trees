@@ -6,10 +6,10 @@ import os
 import uuid
 import py_trees
 
-from social_norms_trees.mutate_tree import move_node, exchange_nodes, remove_node
+from social_norms_trees.mutate_tree import move_node, exchange_nodes, remove_node, add_node
 from social_norms_trees.serialize_tree import serialize_tree, deserialize_tree
 
-from social_norms_trees.action_library import BehaviorLibrary
+from social_norms_trees.behavior_library import BehaviorLibrary
 
 DB_FILE = "db.json"
 
@@ -29,19 +29,16 @@ def save_db(db, db_file):
     with open(db_file, "w") as f:
         json.dump(db, f, indent=4)
 
-def experiment_setup(db, behavior_library):
+def experiment_setup(db, origin_tree):
 
     print("\n")
     participant_id = participant_login()
-
-    print("\n")
-    origin_tree = load_behavior_tree(behavior_library)
 
     experiment_id = initialize_experiment_record(db, participant_id, origin_tree)
 
     print("\nSetup Complete.\n")
 
-    return participant_id, origin_tree, experiment_id
+    return participant_id, experiment_id
 
 
 def participant_login():
@@ -51,81 +48,27 @@ def participant_login():
     return participant_id
 
 
+def load_resources(file_path):
+    try:
+        print(f"\nLoading behavior tree and behavior library from {file_path}...\n")
+        with open(file_path, 'r') as file:
+            resources = json.load(file)
     
-behavior_trees =  {
-    "tree_1": {
-        "name": "Sequence A",
-        "type": "Sequence",
-        "children": [
-            {
-                "name": "Behavior A",
-                "type": "Behavior",
-                "children": []
-            },
-            {
-                "name": "Behavior B",
-                "type": "Behavior",
-                "children": []
-            },
-            {
-                "name": "Sequence B",
-                "type": "Sequence",
-                "children": [
-                    {
-                        "name": "Behavior C",
-                        "type": "Behavior",
-                        "children": []
-                    },
-                    {
-                        "name": "Behavior D",
-                        "type": "Behavior",
-                        "children": []
-                    }
-                ]
-            },
-            {
-                "name": "Sequence C",
-                "type": "Sequence",
-                "children": [
-                    {
-                        "name": "Behavior E",
-                        "type": "Behavior",
-                        "children": []
-                    },
-                    {
-                        "name": "Behavior F",
-                        "type": "Behavior",
-                        "children": []
-                    },
-                    {
-                        "name": "Behavior G",
-                        "type": "Behavior",
-                        "children": []
-                    },
-                    {
-                        "name": "Behavior H",
-                        "type": "Behavior",
-                        "children": []
-                    }
-                ]
-            }
-        ]
-    },
-}
+    except json.JSONDecodeError:
+        raise ValueError("Error")
+    except Exception:
+        raise RuntimeError("Error")
+    
 
+    behavior_tree = resources.get('behavior_tree')
+    behaviors = resources.get('behavior_library')
 
-def load_behavior_tree(behavior_library):
-    for idx, tree_name in enumerate(behavior_trees.keys(), 1):
-        print(f"{idx}. {tree_name}")    
+    behavior_library = BehaviorLibrary(behaviors)
 
-    selected_index = click.prompt("Please select a behavior tree to load for the experiment (enter the number)", type=int)
+    behavior_tree = deserialize_tree(behavior_tree, behavior_library)
 
-    tree_config = behavior_trees[f"tree_{selected_index}"]
-
-    experiment_ready_tree = deserialize_tree(tree_config, behavior_library)
-
-    return experiment_ready_tree
-
+    print("Loading success.")
+    return behavior_tree, behavior_library
 
 def initialize_experiment_record(db, participant_id, origin_tree):
 
@@ -146,7 +89,7 @@ def initialize_experiment_record(db, participant_id, origin_tree):
     return experiment_id
 
 
-def run_experiment(db, participant_id, origin_tree, experiment_id):
+def run_experiment(db, origin_tree, experiment_id, behavior_library):
 
     # Loop for the actual experiment part, which takes user input to decide which action to take
     print("\nExperiment beginning...\n")
@@ -165,8 +108,9 @@ def run_experiment(db, participant_id, origin_tree, experiment_id):
                 "1. move node\n" +
                 "2. exchange node\n" + 
                 "3. remove node\n" + 
+                "4. add node\n" +
                 "Please select an action to perform on the behavior tree",
-                type=click.Choice(['1', '2', '3'], case_sensitive=False),
+                type=click.Choice(['1', '2', '3', '4'], case_sensitive=False),
                 show_choices=True
             )
 
@@ -179,6 +123,10 @@ def run_experiment(db, participant_id, origin_tree, experiment_id):
 
             elif action == "3":
                 origin_tree, action_log = remove_node(origin_tree)
+                db[experiment_id]["action_history"].append(action_log)
+
+            elif action == "4":
+                origin_tree, action_log = add_node(origin_tree, behavior_library)
                 db[experiment_id]["action_history"].append(action_log)
 
             else:
@@ -196,7 +144,6 @@ def run_experiment(db, participant_id, origin_tree, experiment_id):
 def main():
     print("AIT Prototype #1 Simulator")
     
-    behavior_library = BehaviorLibrary()
 
     #TODO: define a input file, that will have the original tree and also the behavior library 
     #TODO: write up some context, assumptions made in the README 
@@ -204,9 +151,13 @@ def main():
     DB_FILE = "db.json"
     db = load_db(DB_FILE)
 
+    #load tree to run experiment on, and behavior library
+    
+    RESOURCES_FILE = "resources.json"
+    original_tree, behavior_library = load_resources(RESOURCES_FILE)
 
-    participant_id, origin_tree, experiment_id = experiment_setup(db, behavior_library)
-    db = run_experiment(db, participant_id, origin_tree, experiment_id)
+    participant_id, experiment_id = experiment_setup(db, original_tree)
+    db = run_experiment(db, original_tree, experiment_id, behavior_library)
     
     save_db(db, DB_FILE)
 

@@ -1,0 +1,104 @@
+{
+    "behavior_tree": {
+        "name": "Sequence A",
+        "type": "Sequence",
+        "children": [
+            {
+                "name": "Behavior A",
+                "type": "Behavior",
+                "children": []
+            },
+            {
+                "name": "Behavior B",
+                "type": "Behavior",
+                "children": []
+            },
+            {
+                "name": "Sequence B",
+                "type": "Sequence",
+                "children": [
+                    {
+                        "name": "Behavior C",
+                        "type": "Behavior",
+                        "children": []
+                    },
+                    {
+                        "name": "Behavior D",
+                        "type": "Behavior",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "name": "Sequence C",
+                "type": "Sequence",
+                "children": [
+                    {
+                        "name": "Behavior E",
+                        "type": "Behavior",
+                        "children": []
+                    },
+                    {
+                        "name": "Behavior F",
+                        "type": "Behavior",
+                        "children": []
+                    },
+                    {
+                        "name": "Behavior G",
+                        "type": "Behavior",
+                        "children": []
+                    },
+                    {
+                        "name": "Behavior H",
+                        "type": "Behavior",
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    },
+    "behavior_library": 
+        {
+            "Behavior A": {
+            "id": "001",
+            "nickname": "Behavior A",
+            "type": "Dummy"
+        },
+        "Behavior B": {
+            "id": "002",
+            "nickname": "Behavior B",
+            "type": "Dummy"
+        },
+        "Behavior C": {
+            "id": "003",
+            "nickname": "Behavior C",
+            "type": "Dummy"
+        },
+        "Behavior D": {
+            "id": "004",
+            "nickname": "Behavior D",
+            "type": "Dummy"
+        },
+        "Behavior E": {
+            "id": "005",
+            "nickname": "Behavior E",
+            "type": "Dummy"
+        },
+        "Behavior F": {
+            "id": "006",
+            "nickname": "Behavior F",
+            "type": "Dummy"
+        },
+        "Behavior G": {
+            "id": "007",
+            "nickname": "Behavior G",
+            "type": "Dummy"
+        },
+        "Behavior H": {
+            "id": "008",
+            "nickname": "Behavior H",
+            "type": "Dummy"
+        }
+
+    }
+}
