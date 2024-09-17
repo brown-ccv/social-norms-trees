@@ -207,6 +207,10 @@ def format_tree_with_indices(
 
     return output
 
+def format_library_with_indices(library: List[py_trees.behaviour.Behaviour]):
+    return "\n".join([f"{i}: {n.name}" for i, n in enumerate(library)])
+
+
 
 def say(message):
     print(message)
@@ -258,6 +262,15 @@ def prompt_identify_tree_iterator_index(
     )
     return node_index
 
+    
+
+def prompt_identify_library_node(library, message: str = "Which position?", display_nodes: bool = True) -> int:
+    if display_nodes:
+        text = f"{format_library_with_indices(library)}\n{message}"
+    else:
+        text = f"{message}"
+    node_index = click.prompt(text=text, type=int)
+    return node_index
 
 def prompt_identify_child_index(
     tree: py_trees.behaviour.Behaviour,
@@ -563,3 +576,4 @@ def add_node(
     }
 
     return tree, action_log
+
