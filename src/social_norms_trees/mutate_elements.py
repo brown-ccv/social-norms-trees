@@ -1,8 +1,9 @@
 import inspect
 from functools import wraps
 import logging
-from types import GenericAlias
-from typing import Tuple, TypeVar
+from types import GenericAlias, NoneType
+from typing import Callable, List, Tuple, TypeVar, Union, Dict
+import click
 import py_trees
 from social_norms_trees.mutate_tree import (
     prompt_identify_node,
@@ -53,8 +54,7 @@ def remove(node: ExistingNode) -> ExistingNode:
 
 
 def insert(node: NewNode, where: CompositeIndex) -> None:
-    """
-    Insert a new node.
+    """Insert a new node.
 
     Examples:
 
@@ -179,7 +179,7 @@ def exchange(
         ...         b := py_trees.behaviours.Dummy("B")
         ...     ])
         ... ])
-        
+
         >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
         [-]
             [-] 1
@@ -204,7 +204,23 @@ def exchange(
     return
 
 
-def mutate_ui(f):
+def mutate_chooser(*fs: Union[Callable], message="Which action?"):
+    n_fs = len(fs)
+    docstring_summaries = [f_.__doc__.split("\n")[0] for f_ in fs]
+    text = "\n".join(
+        [
+            f"{i}: {docstring_summary}"
+            for i, docstring_summary in enumerate(docstring_summaries)
+        ]
+        
+    ) + f"\n{message}"
+    i = click.prompt(text=text, type=click.IntRange(0, n_fs))
+    f = mutate_ui(fs[i])
+
+    return f
+
+
+def mutate_ui(f) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behaviour.Behaviour]], Dict]:
     """Factory function for a tree mutator UI"""
 
     signature = inspect.signature(f)
@@ -260,12 +276,12 @@ if __name__ == "__main__":
 
     def init_tree():
         tree = py_trees.composites.Sequence(
-            "",
+            "S0",
             False,
             children=[
                 py_trees.behaviours.Dummy("A"),
                 py_trees.composites.Sequence(
-                    "Sq",
+                    "S1",
                     memory=False,
                     children=[
                         py_trees.behaviours.Dummy("B"),
@@ -274,7 +290,7 @@ if __name__ == "__main__":
                     ],
                 ),
                 py_trees.composites.Selector(
-                    "Sl",
+                    "S2",
                     memory=False,
                     children=[
                         py_trees.behaviours.Dummy("E"),
@@ -287,22 +303,10 @@ if __name__ == "__main__":
         )
         library = [py_trees.behaviours.Success(), py_trees.behaviours.Failure()]
         return tree, library
-
-    # tree, library = init_tree()
-    # mutate_ui(remove)(tree, library)
-    # print(py_trees.display.ascii_tree(tree))
-
-    # tree, library = init_tree()
-    # print(py_trees.display.ascii_tree(tree))
-    # mutate_ui(move)(tree, library)
-    # print(py_trees.display.ascii_tree(tree))
-
-    # tree, library = init_tree()
-    # print(py_trees.display.ascii_tree(tree))
-    # mutate_ui(insert)(tree, library)
-    # print(py_trees.display.ascii_tree(tree))
-
+    
     tree, library = init_tree()
     print(py_trees.display.ascii_tree(tree))
-    mutate_ui(exchange)(tree, library)
-    print(py_trees.display.ascii_tree(tree))
+    while f := mutate_chooser(insert, move, exchange, remove):
+        results = f(tree, library)
+        _logger.debug(results)
+        print(py_trees.display.ascii_tree(tree))
