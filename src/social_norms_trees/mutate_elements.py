@@ -65,14 +65,14 @@ def insert(node: NewNode, where: CompositeIndex) -> None:
         [-]
             --> Success
 
-        >>> insert((tree, 1), py_trees.behaviours.Failure())
+        >>> insert(py_trees.behaviours.Failure(), (tree, 1))
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
 
-        >>> insert((tree, 0), py_trees.behaviours.Dummy())
+        >>> insert(py_trees.behaviours.Dummy(), (tree, 0))
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
@@ -101,14 +101,14 @@ def move(
         [-]
             --> Failure
             --> Success
-        >>> move((tree, 1), failure_node)
+        >>> move(failure_node, (tree, 1))
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
 
-            >>> move((tree, 1), failure_node)
+            >>> move(failure_node, (tree, 1))
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
@@ -117,7 +117,7 @@ def move(
 
     """
     parent, index = where
-    insert((parent, index), remove(node))
+    insert(remove(node), (parent, index))
     return
 
 
@@ -170,13 +170,36 @@ def exchange(
                 --> Success
                 [-] A
                     --> Dummy
+
+        >>> tree = py_trees.composites.Sequence("", False, children=[
+        ...     py_trees.composites.Sequence("1", False, children=[
+        ...         a := py_trees.behaviours.Dummy("A")
+        ...     ]),
+        ...     py_trees.composites.Sequence("2", False, children=[
+        ...         b := py_trees.behaviours.Dummy("B")
+        ...     ])
+        ... ])
+        
+        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+        [-]
+            [-] 1
+                --> A
+            [-] 2
+                --> B
+        >>> exchange(a, b)
+        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+        [-]
+            [-] 1
+                --> B
+            [-] 2
+                --> A
     """
 
     node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
     node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
 
-    move((node1_parent, node1_index), node0)
-    move((node0_parent, node0_index), node1)
+    move(node0, (node1_parent, node1_index))
+    move(node1, (node0_parent, node0_index))
 
     return
 
@@ -192,7 +215,7 @@ def mutate_ui(f):
         for parameter_name in signature.parameters.keys():
             annotation = signature.parameters[parameter_name].annotation
             _logger.debug(f"getting arguments for {annotation=}")
-            value = _get_mutate_arguments(str(annotation), tree, library)
+            value = prompt_get_mutate_arguments(annotation, tree, library)
             kwargs[parameter_name] = value
         f(**kwargs)
         return {"tree": tree, "function": f, "kwargs": kwargs}
@@ -200,23 +223,24 @@ def mutate_ui(f):
     return f_inner
 
 
-def _get_mutate_arguments(annotation: str, tree, library):
-    assert isinstance(annotation, str)
+def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
+    annotation_ = str(annotation)
+    assert isinstance(annotation_, str)
 
-    if annotation == str(inspect.Parameter.empty):
+    if annotation_ == str(inspect.Parameter.empty):
         _logger.debug("in empty")
         msg = "Can't work out what argument %s should be" % annotation
         raise ValueError(msg)
-    elif annotation == str(ExistingNode):
+    elif annotation_ == str(ExistingNode):
         _logger.debug("in ExistingNode")
         node = prompt_identify_node(tree)
         return node
-    elif annotation == str(CompositeIndex):
+    elif annotation_ == str(CompositeIndex):
         _logger.debug("in CompositeIndex")
-        composite_node = prompt_identify_parent_node(tree)
+        composite_node = prompt_identify_parent_node(tree, message="Which parent?")
         index = prompt_identify_child_index(composite_node)
         return composite_node, index
-    elif annotation == str(NewNode):
+    elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
         new_node_index = prompt_identify_library_node(
             library, "Which node from the library?"
@@ -273,6 +297,12 @@ if __name__ == "__main__":
     # mutate_ui(move)(tree, library)
     # print(py_trees.display.ascii_tree(tree))
 
+    # tree, library = init_tree()
+    # print(py_trees.display.ascii_tree(tree))
+    # mutate_ui(insert)(tree, library)
+    # print(py_trees.display.ascii_tree(tree))
+
     tree, library = init_tree()
-    mutate_ui(insert)(tree, library)
+    print(py_trees.display.ascii_tree(tree))
+    mutate_ui(exchange)(tree, library)
     print(py_trees.display.ascii_tree(tree))
