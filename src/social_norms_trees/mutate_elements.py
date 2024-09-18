@@ -1,3 +1,4 @@
+from collections import namedtuple
 import inspect
 from functools import wraps
 import logging
@@ -219,6 +220,8 @@ def mutate_chooser(*fs: Union[Callable], message="Which action?"):
 
     return f
 
+MutationResult = namedtuple("MutationResult", ["result", "tree", "function", "kwargs"])
+
 
 def mutate_ui(f) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behaviour.Behaviour]], Dict]:
     """Factory function for a tree mutator UI"""
@@ -233,8 +236,9 @@ def mutate_ui(f) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behavi
             _logger.debug(f"getting arguments for {annotation=}")
             value = prompt_get_mutate_arguments(annotation, tree, library)
             kwargs[parameter_name] = value
-        f(**kwargs)
-        return {"tree": tree, "function": f, "kwargs": kwargs}
+        inner_result = f(**kwargs)
+        return_value = MutationResult(result=inner_result, tree=tree, function=f, kwargs=kwargs)
+        return return_value
 
     return f_inner
 
