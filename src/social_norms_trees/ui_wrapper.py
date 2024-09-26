@@ -97,47 +97,53 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
 
     while(True):
         
-        print(py_trees.display.ascii_tree(origin_tree))
-        user_choice = click.prompt(
-            "Would you like to perform an action on the behavior tree?",
-            show_choices=True,
-            type=click.Choice(['y', 'n'], case_sensitive=False),
-        )
-    
-        if user_choice == 'y':
-            action = click.prompt(
-                "1. move node\n" +
-                "2. exchange node\n" + 
-                "3. remove node\n" + 
-                "4. add node\n" +
-                "Please select an action to perform on the behavior tree",
-                type=click.Choice(['1', '2', '3', '4'], case_sensitive=False),
-                show_choices=True
+        try:
+            print(py_trees.display.ascii_tree(origin_tree))
+            user_choice = click.prompt(
+                "Would you like to perform an action on the behavior tree?",
+                show_choices=True,
+                type=click.Choice(['y', 'n'], case_sensitive=False),
             )
+        
+            if user_choice == 'y':
+                action = click.prompt(
+                    "1. move node\n" +
+                    "2. exchange node\n" + 
+                    "3. remove node\n" + 
+                    "4. add node\n" +
+                    "Please select an action to perform on the behavior tree",
+                    type=click.Choice(['1', '2', '3', '4'], case_sensitive=False),
+                    show_choices=True
+                )
 
-            if action == "1":
-                origin_tree, action_log = move_node(origin_tree)
-                db[experiment_id]["action_history"].append(action_log)
-            elif action == "2":
-                origin_tree, action_log = exchange_nodes(origin_tree)
-                db[experiment_id]["action_history"].append(action_log)
+                if action == "1":
+                    origin_tree, action_log = move_node(origin_tree)
+                    db[experiment_id]["action_history"].append(action_log)
+                elif action == "2":
+                    origin_tree, action_log = exchange_nodes(origin_tree)
+                    db[experiment_id]["action_history"].append(action_log)
 
-            elif action == "3":
-                origin_tree, action_log = remove_node(origin_tree)
-                db[experiment_id]["action_history"].append(action_log)
+                elif action == "3":
+                    origin_tree, action_log = remove_node(origin_tree)
+                    db[experiment_id]["action_history"].append(action_log)
 
-            elif action == "4":
-                origin_tree, action_log = add_node(origin_tree, behavior_library)
-                db[experiment_id]["action_history"].append(action_log)
+                elif action == "4":
+                    origin_tree, action_log = add_node(origin_tree, behavior_library)
+                    db[experiment_id]["action_history"].append(action_log)
+
+                else:
+                    print("Invalid choice, please select a valid number (1, 2, or 3).\n")
 
             else:
-                print("Invalid choice, please select a valid number (1, 2, or 3).\n")
-
-        else:
+                db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
+                db[experiment_id]["end_date"] = datetime.now().isoformat()
+                break
+        except:
+            print("Error encountered during this action, experiment will now end.")
             db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
             db[experiment_id]["end_date"] = datetime.now().isoformat()
             break
-        
+
     return db
    
 
@@ -161,7 +167,6 @@ def main():
 
     participant_id, experiment_id = experiment_setup(db, original_tree)
     db = run_experiment(db, original_tree, experiment_id, behavior_library)
-    
     save_db(db, DB_FILE)
 
     #TODO: define export file, that will be where we export the results to
