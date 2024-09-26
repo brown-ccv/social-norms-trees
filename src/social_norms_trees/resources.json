@@ -57,48 +57,72 @@
             }
         ]
     },
-    "behavior_library": 
+    "behavior_library": [
         {
-            "Behavior A": {
             "id": "001",
-            "nickname": "Behavior A",
-            "type": "Dummy"
+            "display_name": "Behavior A",
+            "type": "Dummy",
+            "show": true
         },
-        "Behavior B": {
+        {
             "id": "002",
-            "nickname": "Behavior B",
-            "type": "Dummy"
+            "display_name": "Behavior B",
+            "type": "Dummy",
+            "show": true
         },
-        "Behavior C": {
+        {
             "id": "003",
-            "nickname": "Behavior C",
-            "type": "Dummy"
+            "display_name": "Behavior C",
+            "type": "Dummy",
+            "show": true
         },
-        "Behavior D": {
+        {
             "id": "004",
-            "nickname": "Behavior D",
-            "type": "Dummy"
+            "display_name": "Behavior D",
+            "type": "Dummy",
+            "show": true
         },
-        "Behavior E": {
+        {
             "id": "005",
-            "nickname": "Behavior E",
-            "type": "Dummy"
+            "display_name": "Behavior E",
+            "type": "Dummy",
+            "show": true
         },
-        "Behavior F": {
+        {
             "id": "006",
-            "nickname": "Behavior F",
-            "type": "Dummy"
+            "display_name": "Behavior F",
+            "type": "Dummy",
+            "show": true
         },
-        "Behavior G": {
+        {
             "id": "007",
-            "nickname": "Behavior G",
-            "type": "Dummy"
+            "display_name": "Behavior G",
+            "type": "Dummy",
+            "show": true
         },
-        "Behavior H": {
+        {
             "id": "008",
-            "nickname": "Behavior H",
-            "type": "Dummy"
+            "display_name": "Behavior H",
+            "type": "Dummy",
+            "show": true
+        },
+        {
+            "id": "009",
+            "display_name": "Sequence A",
+            "type": "Sequence",
+            "show": false
+        },
+        {
+            "id": "010",
+            "display_name": "Sequence B",
+            "type": "Sequence",
+            "show": false
+        },
+        {
+            "id": "011",
+            "display_name": "Sequence C",
+            "type": "Sequence",
+            "show": false
         }
-
-    }
+    ]
 }
