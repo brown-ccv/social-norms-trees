@@ -1,9 +1,10 @@
 class BehaviorLibrary:
-    def __init__(self, behaviors):
-        self.behaviors = behaviors
+    def __init__(self, behavior_list):
+        self.behaviors = {behavior["display_name"]: behavior for behavior in behavior_list}
         
-    def get_behavior_by_nickname(self, nickname):
-        return self.behaviors.get(nickname)
+        
+    def get_behavior_by_display_name(self, display_name):
+        return self.behaviors.get(display_name)
 
     def get_behavior_by_id(self, id_):
         for behavior in self.behaviors.values():
