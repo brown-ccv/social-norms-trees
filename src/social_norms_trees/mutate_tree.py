@@ -10,7 +10,7 @@ import py_trees
 
 from datetime import datetime
 
-from social_norms_trees.custom_node_library import CustomBehavior
+from social_norms_trees.custom_node_library import CustomBehavior, CustomSequence
 
 
 T = TypeVar("T", bound=py_trees.behaviour.Behaviour)
@@ -153,7 +153,7 @@ def format_parents_with_indices(composite: py_trees.composites.Composite) -> str
     index_strings = []
     i = 0
     for b in iterate_nodes(composite):
-        if b.children:
+        if b.__class__.__name__ == "CustomSequence" or b.__class__.__name__ == "CustomSelector":
             index_strings.append(str(i))
         else:
             index_strings.append("_")
@@ -537,11 +537,19 @@ def add_node(
     
     behavior = prompt_select_node(behavior_library, f"Which behavior do you want to add?")
     
-    new_node = CustomBehavior(
+
+    if behavior['type'] == "Dummy":
+        new_node = CustomBehavior(
                     name=behavior['display_name'],
                     id_=behavior['id'],
                     display_name=behavior['display_name']
                 )
+    elif behavior['type'] == "Sequence":
+        new_node = CustomSequence(
+                        name=behavior['display_name'],
+                        id_=behavior['id'],
+                        display_name=behavior['display_name'],
+                    )
     
     new_parent = prompt_identify_parent_node(
         tree, f"What should its parent be?", display_nodes=True
