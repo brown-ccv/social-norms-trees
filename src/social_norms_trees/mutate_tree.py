@@ -523,8 +523,9 @@ def prompt_select_node(behavior_library, text):
     )
 
     node_key = list(behavior_library.behaviors.keys())[int(node_index)-1]
+    behavior = behavior_library.behaviors[node_key]
     
-    return behavior_library.behaviors[node_key]
+    return behavior
 
 
 def add_node(
