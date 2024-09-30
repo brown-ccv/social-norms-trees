@@ -515,7 +515,7 @@ def prompt_select_node(behavior_library, text):
     for idx, tree_name in enumerate(behavior_library.behaviors.keys(), 1):
         print(f"{idx}. {tree_name}")    
 
-    choices = [str(i) for i in range(1, len(behavior_library.behaviors.keys()) + 1)]
+    choices = [str(i + 1) for i in range(len(behavior_library.behaviors))]
     node_index = click.prompt(
         text=text,
         type=click.Choice(choices),
