@@ -61,49 +61,49 @@
         {
             "id": "001",
             "display_name": "Behavior A",
-            "type": "Dummy",
+            "type": "Behavior",
             "show": true
         },
         {
             "id": "002",
             "display_name": "Behavior B",
-            "type": "Dummy",
+            "type": "Behavior",
             "show": true
         },
         {
             "id": "003",
             "display_name": "Behavior C",
-            "type": "Dummy",
+            "type": "Behavior",
             "show": true
         },
         {
             "id": "004",
             "display_name": "Behavior D",
-            "type": "Dummy",
+            "type": "Behavior",
             "show": true
         },
         {
             "id": "005",
             "display_name": "Behavior E",
-            "type": "Dummy",
+            "type": "Behavior",
             "show": true
         },
         {
             "id": "006",
             "display_name": "Behavior F",
-            "type": "Dummy",
+            "type": "Behavior",
             "show": true
         },
         {
             "id": "007",
             "display_name": "Behavior G",
-            "type": "Dummy",
+            "type": "Behavior",
             "show": true
         },
         {
             "id": "008",
             "display_name": "Behavior H",
-            "type": "Dummy",
+            "type": "Behavior",
             "show": true
         },
         {
