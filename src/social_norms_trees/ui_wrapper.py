@@ -112,27 +112,27 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
                     "3. remove node\n" + 
                     "4. add node\n" +
                     "Please select an action to perform on the behavior tree",
-                    type=click.Choice(['1', '2', '3', '4'], case_sensitive=False),
+                    type=click.IntRange(min=1, max=4),
                     show_choices=True
                 )
 
-                if action == "1":
+                if action == 1:
                     origin_tree, action_log = move_node(origin_tree)
                     db[experiment_id]["action_history"].append(action_log)
-                elif action == "2":
+                elif action == 2:
                     origin_tree, action_log = exchange_nodes(origin_tree)
                     db[experiment_id]["action_history"].append(action_log)
 
-                elif action == "3":
+                elif action == 3:
                     origin_tree, action_log = remove_node(origin_tree)
                     db[experiment_id]["action_history"].append(action_log)
 
-                elif action == "4":
+                elif action == 4:
                     origin_tree, action_log = add_node(origin_tree, behavior_library)
                     db[experiment_id]["action_history"].append(action_log)
 
                 else:
-                    print("Invalid choice, please select a valid number (1, 2, or 3).\n")
+                    print("Invalid choice, please select a valid number (1, 2, 3, or 4).\n")
 
             else:
                 db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
