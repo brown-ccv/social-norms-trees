@@ -18,7 +18,7 @@ def deserialize_tree(tree, behavior_library):
         node_type = node['type']
         children = [deserialize_node(child) for child in node['children']]
 
-        behavior = behavior_library.get_behavior_by_display_name(node['name'])
+        behavior = behavior_library.behavior_from_display_name[node['name']]
 
         if node_type == 'Sequence':
             if behavior:
