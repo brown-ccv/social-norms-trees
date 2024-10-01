@@ -101,5 +101,5 @@
         }
 
     },
-    "context": "This is a sample context paragraph that describes the context of the enviornment in which the robot is being tasked with operating in. This context should affect the decision making, rendering some actions relevant and others less relevant in this specific context."
+    "context": "This is a sample paragraph that describes the context of the environment in which the robot is operating. This context might affect the decision making, rendering some actions relevant and others less relevant."
 }
