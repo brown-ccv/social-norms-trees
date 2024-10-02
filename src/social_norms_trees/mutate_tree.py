@@ -424,6 +424,7 @@ def move_node(
     if not internal_call:
         action_log = {
             "type": "move_node",
+            #TODO: uncomment out, currently breaks because sequence nodes can now be moved and they dont' have the following attributes
             # "nodes": [
             #     {
             #         "id": node.id_,
