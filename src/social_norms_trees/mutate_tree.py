@@ -224,6 +224,17 @@ def prompt_identify_node(
     node = next(islice(iterate_nodes(tree), node_index, node_index + 1))
     return node
 
+def prompt_identify_index(
+    tree: py_trees.behaviour.Behaviour,
+    message: str = "Which node?",
+    display_nodes: bool = True,
+    show_root: bool = False,
+) -> int:
+    node_index = prompt_identify_tree_iterator_index(
+        tree=tree, message=message, display_nodes=display_nodes, show_root=show_root
+    )
+    return node_index
+
 def prompt_identify_parent_node(
     tree: py_trees.behaviour.Behaviour,
     message: str = "Which position?",
@@ -277,6 +288,21 @@ def prompt_identify_child_index(
     )
     return node_index
 
+
+def determine_parent_node_from_index(
+    tree,
+    node_index
+) -> tuple[py_trees.composites.Composite, int]:
+    
+    #depth first search of tree, using index to locate new location
+    #using either Behavior or Composite class attribute parent to determine parent of node where moved node will be relocated
+    #return the parent node, and child index for move
+
+    for i, node in enumerate_nodes(tree):
+        if i == node_index:
+            child_index = node.parent.children.index(node)
+            return node.parent, child_index
+    return None
 
 def add_child(
     tree: T,
@@ -381,12 +407,12 @@ def move_node(
     if node is None:
         node = prompt_identify_node(tree, f"Which node do you want to move?")
     if new_parent is None:
-        new_parent = prompt_identify_parent_node(
-            tree, f"What should its parent be?", display_nodes=True
-        )
-    if index is None:
-        index = prompt_identify_child_index(new_parent)
+        #Find index of new position
+        node_index = prompt_identify_index(tree, f"Where do you want to move the node to?")
 
+        #From index, determine new parent node, and also child index
+        new_parent, index = determine_parent_node_from_index(tree, node_index)
+   
     assert isinstance(new_parent, py_trees.composites.Composite)
     assert isinstance(node.parent, py_trees.composites.Composite)
 
@@ -398,12 +424,12 @@ def move_node(
     if not internal_call:
         action_log = {
             "type": "move_node",
-            "nodes": [
-                {
-                    "id": node.id_,
-                    "nickname": node.nickname,
-                },
-            ],
+            # "nodes": [
+            #     {
+            #         "id": node.id_,
+            #         "nickname": node.nickname,
+            #     },
+            # ],
             "timestamp": datetime.now().isoformat(), 
         }
         return tree, action_log
