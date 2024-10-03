@@ -61,14 +61,15 @@ def load_resources(file_path):
     
 
     behavior_tree = resources.get('behavior_tree')
-    behaviors = resources.get('behavior_library')
+    behavior_list = resources.get('behavior_library')
+    context_paragraph = resources.get('context')
 
-    behavior_library = BehaviorLibrary(behaviors)
+    behavior_library = BehaviorLibrary(behavior_list)
 
     behavior_tree = deserialize_tree(behavior_tree, behavior_library)
 
     print("Loading success.")
-    return behavior_tree, behavior_library
+    return behavior_tree, behavior_library, context_paragraph
 
 def initialize_experiment_record(db, participant_id, origin_tree):
 
@@ -145,9 +146,9 @@ def main():
     print("AIT Prototype #1 Simulator")
     
 
-    #TODO: define a input file, that will have the original tree and also the behavior library 
     #TODO: write up some context, assumptions made in the README 
 
+    #TODO: user query for files
     DB_FILE = "db.json"
     db = load_db(DB_FILE)
 
@@ -155,7 +156,9 @@ def main():
     
     RESOURCES_FILE = "resources.json"
     try:
-        original_tree, behavior_library = load_resources(RESOURCES_FILE)
+        original_tree, behavior_library, context_paragraph = load_resources(RESOURCES_FILE)
+        print(f"\nContext of this experiment: {context_paragraph}")
+
     except Exception as e:
         print(f"An error occured when loading resources for this experiment: {e}\n")
         print("\nSimulation has ended.")

@@ -33,7 +33,7 @@ def deserialize_tree(tree, behavior_library):
             f"Please ensure that all node types are correct and supported."
         )
 
-        behavior = behavior_library.get_behavior_by_display_name(node['name'])
+        behavior = behavior_library.behavior_from_display_name[node['name']]
 
         if node_type == 'Sequence':
 
