@@ -129,7 +129,7 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
                 origin_tree, action_log = add_node(origin_tree, behavior_library)
                 db[experiment_id]["action_history"].append(action_log)
 
-            else:
+            else: 
                 print("Invalid choice, please select a valid number (1, 2, or 3).\n")
 
         else:
@@ -154,7 +154,13 @@ def main():
     #load tree to run experiment on, and behavior library
     
     RESOURCES_FILE = "resources.json"
-    original_tree, behavior_library = load_resources(RESOURCES_FILE)
+    try:
+        original_tree, behavior_library = load_resources(RESOURCES_FILE)
+    except Exception as e:
+        print(f"An error occured when loading resources for this experiment: {e}\n")
+        print("\nSimulation has ended.")
+
+        return
 
     participant_id, experiment_id = experiment_setup(db, original_tree)
     db = run_experiment(db, original_tree, experiment_id, behavior_library)
