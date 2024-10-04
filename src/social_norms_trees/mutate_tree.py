@@ -99,33 +99,6 @@ def label_tree_lines(
     labels: List[str],
     representation=py_trees.display.unicode_tree,
 ) -> str:
-    """Label the lines of a tree.
-
-    Examples:
-        >>> print(label_tree_lines(py_trees.behaviours.Dummy(), labels=["0"]))
-        0: --> Dummy
-
-
-        >>> tree = py_trees.composites.Sequence(
-        ...             "S1", 
-        ...             False, 
-        ...             children=[
-        ...                 py_trees.behaviours.Dummy(), 
-        ...                 py_trees.behaviours.Dummy()]
-        ...         )
-
-
-        >>> print(label_tree_lines(tree, labels=["A", "B", "C"]))
-        A: [-] S1
-        B:     --> Dummy
-        C:     --> Dummy
-
-        >>> print(label_tree_lines(tree, labels=["AAA", "BB", "C"]))
-        AAA: [-] S1
-         BB:     --> Dummy
-          C:     --> Dummy
-
-    """
     max_len = max([len(s) for s in labels])
     padded_labels = [s.rjust(max_len) for s in labels]
 
@@ -141,39 +114,26 @@ def label_tree_lines(
 def format_children_with_indices(composite: py_trees.composites.Composite) -> str:
     """
     Examples:
-        >>> tree = py_trees.composites.Sequence(
-        ...     "s1",
-        ...     False,
-        ...     children=[
+        >>> tree = py_trees.composites.Sequence("s1", False, children=[
         ...         py_trees.behaviours.Dummy(),
         ...         py_trees.behaviours.Success(),
-        ...         py_trees.composites.Sequence(
-        ...             "s2",
-        ...             False,
-        ...             children=[
-        ...                 py_trees.behaviours.Dummy(),
-        ...             ],
-        ...         ),
-        ...         py_trees.composites.Sequence(
-        ...             "",
-        ...             False,
-        ...             children=[
-        ...                 py_trees.behaviours.Failure(),
-        ...                 py_trees.behaviours.Periodic("p", n=1),
-        ...             ],
-        ...         ),
-        ...     ],
-        ... )
+        ...         py_trees.composites.Sequence("s2", False, children=[
+        ...             py_trees.behaviours.Dummy(),
+        ...         ]),
+        ...         py_trees.composites.Sequence("", False, children=[
+        ...             py_trees.behaviours.Failure(),
+        ...             py_trees.behaviours.Periodic("p", n=1),
+        ...         ]),
+        ... ])
         >>> print(format_children_with_indices(tree))  # doctest: +NORMALIZE_WHITESPACE
-        _: [-] s1
+        _:  [-] s1
         0:     --> Dummy
         1:     --> Success
         2:     [-] s2
         _:         --> Dummy
-        3:     [-] 
+        3:     [-]
         _:         --> Failure
         _:         --> p
-
     """
     index_strings = []
     i = 0
@@ -183,6 +143,8 @@ def format_children_with_indices(composite: py_trees.composites.Composite) -> st
             i += 1
         else:
             index_strings.append("_")
+
+    index_strings.append(str(i))
 
     output = label_tree_lines(composite, index_strings)
     return output
@@ -292,8 +254,7 @@ def prompt_identify_tree_iterator_index(
     show_root: bool = False,
 ) -> int:
     if display_nodes:
-        format_tree_text, index_options = format_tree_with_indices(
-            tree, show_root)
+        format_tree_text, index_options = format_tree_with_indices(tree, show_root)
         text = f"{format_tree_text}\n{message}"
     else:
         _, index_options = format_tree_with_indices(tree, show_root)
@@ -501,17 +462,14 @@ def exchange_nodes(
     """
 
     if node0 is None:
-        node0 = prompt_identify_node(
-            tree, f"Which node do you want to switch?")
+        node0 = prompt_identify_node(tree, f"Which node do you want to switch?")
     if node1 is None:
         node1 = prompt_identify_node(
             tree, f"Which node do you want to switch?", display_nodes=False
         )
 
-    node0_parent, node0_index = node0.parent, node0.parent.children.index(
-        node0)
-    node1_parent, node1_index = node1.parent, node1.parent.children.index(
-        node1)
+    node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
+    node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
 
     tree = move_node(tree, node0, node1_parent, node1_index, True)
     tree = move_node(tree, node1, node0_parent, node0_index, True)
@@ -524,13 +482,6 @@ def exchange_nodes(
             }
         )
     else:
-        nodes.append(
-            {
-                "id": node0.id_,
-                "nickname": node0.nickname
-            }
-        )
-
         nodes.append({"id": node0.id_, "display_name": node0.display_name})
 
     if node1.__class__.__name__ != "CustomBehavior":
@@ -551,27 +502,15 @@ def exchange_nodes(
 
 
 def prompt_select_node(behavior_library, text):
-
-    for idx, tree_name in enumerate(behavior_library.behaviors.keys(), 1):
-        print(f"{idx}. {tree_name}")
     for idx, tree_name in enumerate(
         behavior_library.behavior_from_display_name.keys(), 1
     ):
         print(f"{idx}. {tree_name}")
 
-    node_index = click.prompt(
-        text=text,
-        type=int,
-    )
     choices = [str(i + 1) for i in range(len(behavior_library.behaviors))]
-    node_index = click.prompt(
-        text=text, type=click.Choice(choices), show_choices=False)
+    node_index = click.prompt(text=text, type=click.Choice(choices), show_choices=False)
 
-    node_key = list(behavior_library.behaviors.keys())[node_index-1]
-
-    return behavior_library.behaviors[node_key]
-    node_key = list(behavior_library.behavior_from_display_name.keys())[
-        node_index - 1]
+    node_key = list(behavior_library.behavior_from_display_name.keys())[node_index - 1]
 
     return behavior_library.behavior_from_display_name[node_key]
 
@@ -586,15 +525,6 @@ def add_node(
         >>> tree = py_trees.composites.Sequence("", False, children=[])
 
     """
-
-    behavior = prompt_select_node(
-        behavior_library, f"Which behavior do you want to add?")
-
-    new_node = CustomBehavior(
-        name=behavior['nickname'],
-        id_=behavior['id'],
-        nickname=behavior['nickname']
-    )
 
     behavior = prompt_select_node(
         behavior_library, f"Which behavior do you want to add?"
@@ -626,11 +556,6 @@ def add_node(
 
     action_log = {
         "type": "add_node",
-        "node": {
-                "id": new_node.id_,
-                "nickname": new_node.nickname
-        },
-        "timestamp": datetime.now().isoformat(),
         "node": {"id": new_node.id_, "display_name": new_node.display_name},
         "timestamp": datetime.now().isoformat(),
     }
