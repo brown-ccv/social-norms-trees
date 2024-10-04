@@ -211,15 +211,14 @@ def exchange(
                 --> A
     """
 
-    node0_parent, node0_index = node0.parent, node0.parent.children.index(
-        node0)
-    node1_parent, node1_index = node1.parent, node1.parent.children.index(
-        node1)
+    node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
+    node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
 
     move(node0, (node1_parent, node1_index))
     move(node1, (node0_parent, node0_index))
 
     return
+
 
 # =============================================================================
 # Node and Position Selectors
@@ -312,10 +311,10 @@ def label_tree_lines(
 
 
         >>> tree = py_trees.composites.Sequence(
-        ...             "S1", 
-        ...             False, 
+        ...             "S1",
+        ...             False,
         ...             children=[
-        ...                 py_trees.behaviours.Dummy(), 
+        ...                 py_trees.behaviours.Dummy(),
         ...                 py_trees.behaviours.Dummy()]
         ...         )
 
@@ -346,7 +345,7 @@ def label_tree_lines(
 def prompt_identify_node(
     tree: py_trees.behaviour.Behaviour,
     message: str = "Which node?",
-    display_nodes: bool = True
+    display_nodes: bool = True,
 ) -> py_trees.behaviour.Behaviour:
 
     key_node_mapping = {str(i): n for i, n in enumerate_nodes(tree)}
@@ -364,7 +363,9 @@ def prompt_identify_node(
     return node
 
 
-def prompt_identify_library_node(library, message: str = "Which action from the library?", display_nodes: bool = True) -> py_trees.behaviour.Behaviour:
+def prompt_identify_library_node(
+    library, message: str = "Which action from the library?", display_nodes: bool = True
+) -> py_trees.behaviour.Behaviour:
     key_node_mapping = {str(i): n for i, n in enumerate(library)}
 
     if display_nodes:
@@ -388,8 +389,7 @@ def format_library_with_indices(library: List[py_trees.behaviour.Behaviour]):
 
 
 # Wrapper functions for the atomic operations which give them a UI.
-MutationResult = namedtuple(
-    "MutationResult", ["result", "tree", "function", "kwargs"])
+MutationResult = namedtuple("MutationResult", ["result", "tree", "function", "kwargs"])
 
 
 def mutate_chooser(*fs: Union[Callable], message="Which action?"):
@@ -408,7 +408,7 @@ def mutate_chooser(*fs: Union[Callable], message="Which action?"):
         )
         + f"\n{message}"
     )
-    i = click.prompt(text=text, type=click.IntRange(0, n_fs-1))
+    i = click.prompt(text=text, type=click.IntRange(0, n_fs - 1))
     f = mutate_ui(fs[i])
 
     return f
@@ -420,7 +420,7 @@ def mutate_ui(
     """Factory function for a tree mutator UI.
 
     This creates a version of the atomic function `f`
-    which prompts the user for the appropriate arguments 
+    which prompts the user for the appropriate arguments
     based on `f`'s type annotations.
     """
 
@@ -458,15 +458,12 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         return node
     elif annotation_ == str(CompositeIndex):
         _logger.debug("in CompositeIndex")
-        composite_node = prompt_identify_parent_node(
-            tree, message="Which parent?")
+        composite_node = prompt_identify_parent_node(tree, message="Which parent?")
         index = prompt_identify_child_index(composite_node)
         return composite_node, index
     elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
-        new_node = prompt_identify_library_node(
-            library, "Which node from the library?"
-        )
+        new_node = prompt_identify_library_node(library, "Which node from the library?")
         return new_node
     else:
         _logger.debug("in 'else'")
@@ -491,6 +488,7 @@ def quit():
 # =============================================================================
 # Main Loop
 # =============================================================================
+
 
 def load_experiment():
     """Placeholder function for loading a tree and library (should come from a file)."""
@@ -520,8 +518,7 @@ def load_experiment():
             py_trees.behaviours.Success(),
         ],
     )
-    library = [py_trees.behaviours.Success(
-    ), py_trees.behaviours.Failure()]
+    library = [py_trees.behaviours.Success(), py_trees.behaviours.Failure()]
     return tree, library
 
 
