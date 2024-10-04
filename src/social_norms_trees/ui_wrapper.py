@@ -105,7 +105,7 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
                 show_choices=True,
                 type=click.Choice(['y', 'n'], case_sensitive=False),
             )
-        
+            
             if user_choice == 'y':
                 action = click.prompt(
                     "1. move node\n" +
@@ -138,7 +138,7 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
             #user_choice == "n", end simulation run
             else:
                 break
-        
+
     except Exception:
         print("\nAn error has occured during the experiment, the experiment will now end.")
         db[experiment_id]["error_log"] = traceback.format_exc()
@@ -164,8 +164,8 @@ def main():
     
     RESOURCES_FILE = "resources.json"
     original_tree, behavior_library, context_paragraph = load_resources(RESOURCES_FILE)
-
     print(f"\nContext of this experiment: {context_paragraph}")
+
 
     participant_id, experiment_id = experiment_setup(db, original_tree)
     db = run_experiment(db, original_tree, experiment_id, behavior_library)
