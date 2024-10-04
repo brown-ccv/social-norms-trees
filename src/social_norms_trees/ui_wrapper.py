@@ -5,6 +5,7 @@ import json
 import os
 import uuid
 import py_trees
+import traceback
 
 from social_norms_trees.mutate_tree import (
     move_node,
@@ -37,11 +38,11 @@ def save_db(db, db_file):
 
 
 def experiment_setup(db, origin_tree):
-
     print("\n")
     participant_id = participant_login()
 
-    experiment_id = initialize_experiment_record(db, participant_id, origin_tree)
+    experiment_id = initialize_experiment_record(
+        db, participant_id, origin_tree)
 
     print("\nSetup Complete.\n")
 
@@ -49,7 +50,6 @@ def experiment_setup(db, origin_tree):
 
 
 def participant_login():
-
     participant_id = click.prompt("Please enter your participant id", type=str)
 
     return participant_id
@@ -57,7 +57,8 @@ def participant_login():
 
 def load_resources(file_path):
     try:
-        print(f"\nLoading behavior tree and behavior library from {file_path}...\n")
+        print(
+            f"\nLoading behavior tree and behavior library from {file_path}...\n")
         with open(file_path, "r") as file:
             resources = json.load(file)
 
@@ -79,7 +80,6 @@ def load_resources(file_path):
 
 
 def initialize_experiment_record(db, participant_id, origin_tree):
-
     experiment_id = str(uuid.uuid4())
 
     # TODO: look into python data class
@@ -98,54 +98,64 @@ def initialize_experiment_record(db, participant_id, origin_tree):
 
 
 def run_experiment(db, origin_tree, experiment_id, behavior_library):
-
     # Loop for the actual experiment part, which takes user input to decide which action to take
     print("\nExperiment beginning...\n")
 
-    while True:
-
-        print(py_trees.display.ascii_tree(origin_tree))
-        user_choice = click.prompt(
-            "Would you like to perform an action on the behavior tree?",
-            show_choices=True,
-            type=click.Choice(["y", "n"], case_sensitive=False),
-        )
-
-        if user_choice == "y":
-            action = click.prompt(
-                "1. move node\n"
-                + "2. exchange node\n"
-                + "3. remove node\n"
-                + "4. add node\n"
-                + "Please select an action to perform on the behavior tree",
-                type=click.Choice(["1", "2", "3", "4"], case_sensitive=False),
+    try:
+        while True:
+            print(py_trees.display.ascii_tree(origin_tree))
+            user_choice = click.prompt(
+                "Would you like to perform an action on the behavior tree?",
                 show_choices=True,
+                type=click.Choice(["y", "n"], case_sensitive=False),
             )
 
-            if action == "1":
-                origin_tree, action_log = move_node(origin_tree)
-                db[experiment_id]["action_history"].append(action_log)
-            elif action == "2":
-                origin_tree, action_log = exchange_nodes(origin_tree)
-                db[experiment_id]["action_history"].append(action_log)
+            if user_choice == "y":
+                action = click.prompt(
+                    "1. move node\n"
+                    + "2. exchange node\n"
+                    + "3. remove node\n"
+                    + "4. add node\n"
+                    + "Please select an action to perform on the behavior tree",
+                    type=click.IntRange(min=1, max=4),
+                    show_choices=True,
+                )
 
-            elif action == "3":
-                origin_tree, action_log = remove_node(origin_tree)
-                db[experiment_id]["action_history"].append(action_log)
+                if action == 1:
+                    origin_tree, action_log = move_node(origin_tree)
+                    db[experiment_id]["action_history"].append(action_log)
+                elif action == 2:
+                    origin_tree, action_log = exchange_nodes(origin_tree)
+                    db[experiment_id]["action_history"].append(action_log)
 
-            elif action == "4":
-                origin_tree, action_log = add_node(origin_tree, behavior_library)
-                db[experiment_id]["action_history"].append(action_log)
+                elif action == 3:
+                    origin_tree, action_log = remove_node(origin_tree)
+                    db[experiment_id]["action_history"].append(action_log)
 
+                elif action == 4:
+                    origin_tree, action_log = add_node(
+                        origin_tree, behavior_library)
+                    db[experiment_id]["action_history"].append(action_log)
+
+                else:
+                    print(
+                        "Invalid choice, please select a valid number (1, 2, 3, or 4).\n"
+                    )
+
+            # user_choice == "n", end simulation run
             else:
-                print("Invalid choice, please select a valid number (1, 2, or 3).\n")
+                break
 
-        else:
-            db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
-            db[experiment_id]["end_date"] = datetime.now().isoformat()
-            break
+    except Exception:
+        print(
+            "\nAn error has occured during the experiment, the experiment will now end."
+        )
+        db[experiment_id]["error_log"] = traceback.format_exc()
 
-    return db
+    finally:
+        db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
+        db[experiment_id]["end_date"] = datetime.now().isoformat()
+        return db
 
 
 def main():
@@ -160,13 +170,12 @@ def main():
     # load tree to run experiment on, and behavior library
 
     RESOURCES_FILE = "resources.json"
-    original_tree, behavior_library, context_paragraph = load_resources(RESOURCES_FILE)
-
+    original_tree, behavior_library, context_paragraph = load_resources(
+        RESOURCES_FILE)
     print(f"\nContext of this experiment: {context_paragraph}")
 
     participant_id, experiment_id = experiment_setup(db, original_tree)
     db = run_experiment(db, original_tree, experiment_id, behavior_library)
-
     save_db(db, DB_FILE)
 
     # TODO: define export file, that will be where we export the results to

@@ -10,7 +10,7 @@ import py_trees
 
 from datetime import datetime
 
-from social_norms_trees.custom_node_library import CustomBehavior
+from social_norms_trees.custom_node_library import CustomBehavior, CustomSequence
 
 
 T = TypeVar("T", bound=py_trees.behaviour.Behaviour)
@@ -154,7 +154,10 @@ def format_parents_with_indices(composite: py_trees.composites.Composite) -> str
     index_strings = []
     i = 0
     for b in iterate_nodes(composite):
-        if b.children:
+        if (
+            b.__class__.__name__ == "CustomSequence"
+            or b.__class__.__name__ == "CustomSelector"
+        ):
             index_strings.append(str(i))
         else:
             index_strings.append("_")
@@ -167,7 +170,7 @@ def format_parents_with_indices(composite: py_trees.composites.Composite) -> str
 def format_tree_with_indices(
     tree: py_trees.behaviour.Behaviour,
     show_root: bool = False,
-) -> str:
+) -> tuple[str, List[str]]:
     """
     Examples:
         >>> print(format_tree_with_indices(py_trees.behaviours.Dummy()))
@@ -206,7 +209,7 @@ def format_tree_with_indices(
         index += 1
     output = label_tree_lines(tree, index_strings)
 
-    return output
+    return output, index_strings[1:]
 
 
 def say(message):
@@ -251,14 +254,18 @@ def prompt_identify_tree_iterator_index(
     show_root: bool = False,
 ) -> int:
     if display_nodes:
-        text = f"{format_tree_with_indices(tree, show_root)}\n{message}"
+        format_tree_text, index_options = format_tree_with_indices(
+            tree, show_root)
+        text = f"{format_tree_text}\n{message}"
     else:
+        _, index_options = format_tree_with_indices(tree, show_root)
         text = f"{message}"
     node_index = click.prompt(
         text=text,
-        type=int,
+        type=click.Choice(index_options, case_sensitive=False),
+        show_choices=False,
     )
-    return node_index
+    return int(node_index)
 
 
 def prompt_identify_child_index(
@@ -350,7 +357,7 @@ def remove_node(tree: T, node: Optional[py_trees.behaviour.Behaviour] = None) ->
         action_log = {
             "type": "remove_node",
             "nodes": [
-                {"id_": node.id_, "nickname": node.nickname},
+                {"id_": node.id_, "display_name": node.display_name},
             ],
             "timestamp": datetime.now().isoformat(),
         }
@@ -396,7 +403,7 @@ def move_node(
             "nodes": [
                 {
                     "id": node.id_,
-                    "nickname": node.nickname,
+                    "display_name": node.display_name,
                 },
             ],
             "timestamp": datetime.now().isoformat(),
@@ -456,14 +463,17 @@ def exchange_nodes(
     """
 
     if node0 is None:
-        node0 = prompt_identify_node(tree, f"Which node do you want to switch?")
+        node0 = prompt_identify_node(
+            tree, f"Which node do you want to switch?")
     if node1 is None:
         node1 = prompt_identify_node(
             tree, f"Which node do you want to switch?", display_nodes=False
         )
 
-    node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
-    node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
+    node0_parent, node0_index = node0.parent, node0.parent.children.index(
+        node0)
+    node1_parent, node1_index = node1.parent, node1.parent.children.index(
+        node1)
 
     tree = move_node(tree, node0, node1_parent, node1_index, True)
     tree = move_node(tree, node1, node0_parent, node0_index, True)
@@ -472,20 +482,20 @@ def exchange_nodes(
     if node0.__class__.__name__ != "CustomBehavior":
         nodes.append(
             {
-                "nickname": node0.name,
+                "display_name": node0.name,
             }
         )
     else:
-        nodes.append({"id": node0.id_, "nickname": node0.nickname})
+        nodes.append({"id": node0.id_, "display_name": node0.display_name})
 
     if node1.__class__.__name__ != "CustomBehavior":
         nodes.append(
             {
-                "nickname": node1.name,
+                "display_name": node1.display_name,
             }
         )
     else:
-        nodes.append({"id": node1.id_, "nickname": node1.nickname})
+        nodes.append({"id": node1.id_, "display_name": node1.display_name})
 
     action_log = {
         "type": "exchange_nodes",
@@ -499,15 +509,23 @@ def prompt_select_node(behavior_library, text):
 
     for idx, tree_name in enumerate(behavior_library.behaviors.keys(), 1):
         print(f"{idx}. {tree_name}")
+    for idx, tree_name in enumerate(
+        behavior_library.behavior_from_display_name.keys(), 1
+    ):
+        print(f"{idx}. {tree_name}")
 
     node_index = click.prompt(
         text=text,
         type=int,
     )
+    choices = [str(i + 1) for i in range(len(behavior_library.behaviors))]
+    node_index = click.prompt(
+        text=text, type=click.Choice(choices), show_choices=False)
 
-    node_key = list(behavior_library.behaviors.keys())[node_index - 1]
+    node_key = list(behavior_library.behavior_from_display_name.keys())[
+        node_index - 1]
 
-    return behavior_library.behaviors[node_key]
+    return behavior_library.behavior_from_display_name[node_key]
 
 
 def add_node(
@@ -525,9 +543,19 @@ def add_node(
         behavior_library, f"Which behavior do you want to add?"
     )
 
-    new_node = CustomBehavior(
-        name=behavior["nickname"], id_=behavior["id"], nickname=behavior["nickname"]
-    )
+    if behavior["type"] == "Behavior":
+        new_node = CustomBehavior(
+            name=behavior["display_name"],
+            id_=behavior["id"],
+            display_name=behavior["display_name"],
+        )
+
+    elif behavior["type"] == "Sequence":
+        new_node = CustomSequence(
+            name=behavior["display_name"],
+            id_=behavior["id"],
+            display_name=behavior["display_name"],
+        )
 
     new_parent = prompt_identify_parent_node(
         tree, f"What should its parent be?", display_nodes=True
@@ -541,7 +569,7 @@ def add_node(
 
     action_log = {
         "type": "add_node",
-        "node": {"id": new_node.id_, "nickname": new_node.nickname},
+        "node": {"id": new_node.id_, "display_name": new_node.display_name},
         "timestamp": datetime.now().isoformat(),
     }
 
