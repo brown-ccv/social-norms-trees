@@ -2,10 +2,9 @@ from collections import namedtuple
 import inspect
 from functools import wraps
 import logging
-from types import GenericAlias, NoneType
+from types import GenericAlias
 from typing import Callable, List, Tuple, TypeVar, Union, Dict
 import click
-import json
 import py_trees
 from social_norms_trees.mutate_tree import (
     prompt_identify_node,
@@ -197,8 +196,10 @@ def exchange(
                 --> A
     """
 
-    node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
-    node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
+    node0_parent, node0_index = node0.parent, node0.parent.children.index(
+        node0)
+    node1_parent, node1_index = node1.parent, node1.parent.children.index(
+        node1)
 
     move(node0, (node1_parent, node1_index))
     move(node1, (node0_parent, node0_index))
@@ -233,7 +234,8 @@ def mutate_chooser(*fs: Union[Callable], message="Which action?"):
     return f
 
 
-MutationResult = namedtuple("MutationResult", ["result", "tree", "function", "kwargs"])
+MutationResult = namedtuple(
+    "MutationResult", ["result", "tree", "function", "kwargs"])
 
 
 def mutate_ui(
@@ -274,7 +276,8 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         return node
     elif annotation_ == str(CompositeIndex):
         _logger.debug("in CompositeIndex")
-        composite_node = prompt_identify_parent_node(tree, message="Which parent?")
+        composite_node = prompt_identify_parent_node(
+            tree, message="Which parent?")
         index = prompt_identify_child_index(composite_node)
         return composite_node, index
     elif annotation_ == str(NewNode):
@@ -322,7 +325,8 @@ if __name__ == "__main__":
                 py_trees.behaviours.Success(),
             ],
         )
-        library = [py_trees.behaviours.Success(), py_trees.behaviours.Failure()]
+        library = [py_trees.behaviours.Success(
+        ), py_trees.behaviours.Failure()]
         return tree, library
 
     tree, library = init_tree()
