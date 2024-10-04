@@ -52,7 +52,6 @@ blackboard.canEnterElevator = False
 blackboard.isElevatorOn7th = False
 blackboard.canLeaveElevator = False
 
-
 def description() -> str:
     """
     Print description and usage information about the program.
@@ -67,16 +66,14 @@ def description() -> str:
     content += "There are failing nodes within the tree that asks the human for input to demonstrate altering the tree between ticks.\n"
     content += "\n"
     content += "Key:\n"
-    content += (
-        "'--> ' - A leaf node that can return success, failure, or running when ran.\n"
-    )
+    content += "'--> ' - A leaf node that can return success, failure, or running when ran.\n"
     content += "'\{-\} Sequence' - A sequential operator with children that will be run in sequential order.\n"
     content += "'\{o\} Selector' - A fallback operator with children that will be run one at a time if the previous child fails.\n"
     content += "'-' - A node that has not been ran in the current tick yet.\n"
     content += "'✕' - A node that has ran and failed in the current tick.\n"
     content += "'✓' - A node that has ran and succeeded in the current tick.\n"
     content += "'*' - A node that has ran and returned running in the current tick.\n"
-
+    
     if py_trees.console.has_colours:
         banner_line = console.green + "*" * 79 + "\n" + console.reset
         s = banner_line
@@ -137,7 +134,6 @@ def command_line_argument_parser() -> argparse.ArgumentParser:
     )
     return parser
 
-
 def wait(name, ticks) -> py_trees.behaviours.StatusQueue:
     queue = []
     for i in range(0, ticks + 1):
@@ -160,6 +156,7 @@ def create_root() -> py_trees.behaviour.Behaviour:
 
     root = py_trees.composites.Sequence(name="Sequence", memory=False)
 
+
     get_medicine = py_trees.composites.Sequence(name="Sequence", memory=False)
 
     take_elevator = py_trees.composites.Sequence(name="Sequence", memory=False)
@@ -168,70 +165,75 @@ def create_root() -> py_trees.behaviour.Behaviour:
 
     root.add_children([get_medicine, take_elevator, deliver_medicine])
 
+
+
     go_to = py_trees.behaviours.Success(name="Go To Medicine Cabinet")
     unlock = py_trees.composites.Selector(name="Selector", memory=False)
     take = py_trees.behaviours.Success(name="Pickup Medicine")
     get_medicine.add_children([go_to, unlock, take])
 
     unlock_cabinet = py_trees.behaviours.CheckBlackboardVariableValue(
-        name="Unlock Cabinet",
-        check=py_trees.common.ComparisonExpression(
-            variable="isCabinetUnlocked", value=True, operator=operator.eq
-        ),
-    )
+                name="Unlock Cabinet",
+                check=py_trees.common.ComparisonExpression(
+                    variable="isCabinetUnlocked", value=True, operator=operator.eq
+                ),
+            )
     wait_cabinet = wait("Wait for at most 3 Ticks", 3)
     # supervisor = py_trees.behaviours.Success(name="Call Supervisor for Virtual Unlock")
     # unlock.add_children([unlock_cabinet, wait_cabinet, supervisor])
     unlock.add_children([unlock_cabinet, wait_cabinet])
+
 
     go_to_elevator = py_trees.behaviours.Success(name="Go to Elevator")
     click_up_button = py_trees.behaviours.Success(name="Click Up Button")
     wait_for_elevator = py_trees.composites.Sequence(name="Sequence", memory=False)
     enter_elevator = py_trees.composites.Sequence(name="Sequence", memory=False)
 
-    take_elevator.add_children(
-        [go_to_elevator, click_up_button, wait_for_elevator, enter_elevator]
-    )
+    take_elevator.add_children([go_to_elevator, click_up_button, wait_for_elevator, enter_elevator])
 
     is_elevator_open = py_trees.composites.Selector(name="Selector", memory=False)
     has_space_in_elevator = py_trees.composites.Selector(name="Selector", memory=False)
     can_enter_elevator = py_trees.composites.Selector(name="Selector", memory=False)
-    wait_for_elevator.add_children(
-        [is_elevator_open, has_space_in_elevator, can_enter_elevator]
-    )
+    wait_for_elevator.add_children([is_elevator_open, has_space_in_elevator, can_enter_elevator])
+
 
     elevator_open = py_trees.behaviours.CheckBlackboardVariableValue(
-        name="Is Elevator Open?",
-        check=py_trees.common.ComparisonExpression(
-            variable="isElevatorOpen", value=True, operator=operator.eq
-        ),
-    )
+                name="Is Elevator Open?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="isElevatorOpen", value=True, operator=operator.eq
+                ),
+            )
     wait_for_open_elevator = wait("Wait for at most 5 Ticks", 5)
     # supervisor = py_trees.behaviours.Success(name="Call Supervisor to Virtually Call Elevator")
     # is_elevator_open.add_children([elevator_open, wait_for_open_elevator, supervisor])
     is_elevator_open.add_children([elevator_open, wait_for_open_elevator])
 
     elevator_space = py_trees.behaviours.CheckBlackboardVariableValue(
-        name=">= 9ft^2 of space in the Elevator?",
-        check=py_trees.common.ComparisonExpression(
-            variable="elevatorHasSpace", value=True, operator=operator.eq
-        ),
-    )
-    wait_for_space = py_trees.behaviours.Running(name="State 'I’ll wait'")
+                name=">= 9ft^2 of space in the Elevator?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="elevatorHasSpace", value=True, operator=operator.eq
+                ),
+            )
+    wait_for_space = py_trees.behaviours.Running(name="State \'I’ll wait\'")
     has_space_in_elevator.add_children([elevator_space, wait_for_space])
-
+    
     elevator_enter = py_trees.behaviours.CheckBlackboardVariableValue(
-        name="Ask to enter Elevator",
-        check=py_trees.common.ComparisonExpression(
-            variable="canEnterElevator", value=True, operator=operator.eq
-        ),
-    )
+                name="Ask to enter Elevator",
+                check=py_trees.common.ComparisonExpression(
+                    variable="canEnterElevator", value=True, operator=operator.eq
+                ),
+            )
     wait_to_enter_elevator = py_trees.behaviours.Running(name="State I’ll wait")
     can_enter_elevator.add_children([elevator_enter, wait_to_enter_elevator])
+
+
+
+
 
     enter_elevator_task = py_trees.behaviours.Success(name="Enter Elevator")
     hit_7th_floor_button = py_trees.behaviours.Success(name="Hit 7th Floor Button")
     enter_elevator.add_children([enter_elevator_task, hit_7th_floor_button])
+
 
     exit = py_trees.composites.Sequence(name="Sequence", memory=False)
     exit_statement = py_trees.behaviours.Success(name="State: I'll exit now")
@@ -241,26 +243,33 @@ def create_root() -> py_trees.behaviour.Behaviour:
 
     get_to_7th = py_trees.composites.Selector(name="Selector", memory=False)
     can_exit_now = py_trees.composites.Selector(name="Selector", memory=False)
-
+    
     exit.add_children([get_to_7th, can_exit_now])
 
     is_elevator_on_7th = py_trees.behaviours.CheckBlackboardVariableValue(
-        name="Is Elevator on 7th?",
-        check=py_trees.common.ComparisonExpression(
-            variable="isElevatorOn7th", value=True, operator=operator.eq
-        ),
-    )
+                name="Is Elevator on 7th?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="isElevatorOn7th", value=True, operator=operator.eq
+                ),
+            )
     elevator_wait = py_trees.behaviours.Running(name="Wait")
     get_to_7th.add_children([is_elevator_on_7th, elevator_wait])
 
     are_people_on_elevator = py_trees.behaviours.CheckBlackboardVariableValue(
-        name="Is >= 1 Person in Elevator?",
-        check=py_trees.common.ComparisonExpression(
-            variable="canLeaveElevator", value=True, operator=operator.eq
-        ),
-    )
+                name="Is >= 1 Person in Elevator?",
+                check=py_trees.common.ComparisonExpression(
+                    variable="canLeaveElevator", value=True, operator=operator.eq
+                ),
+            )
     exit_elevator_wait = wait("Wait for at most 3 Ticks", 3)
     can_exit_now.add_children([are_people_on_elevator, exit_elevator_wait])
+
+
+
+
+
+
+
 
     return root
 
@@ -324,9 +333,7 @@ def main() -> None:
             if behaviour_tree.root.status == py_trees.common.Status.SUCCESS:
                 tree_success = True
             elif behaviour_tree.root.status == py_trees.common.Status.FAILURE:
-                callSupervisor = input(
-                    "Should the robot call it's supervisor for help on the next tick for the failed task? (1 for Yes 0 for No)\n"
-                )
+                callSupervisor = input("Should the robot call it's supervisor for help on the next tick for the failed task? (1 for Yes 0 for No)\n")
                 if callSupervisor == "1":
                     node = behaviour_tree.root
                     found = False
@@ -338,10 +345,9 @@ def main() -> None:
                         if type(node) == py_trees.composites.Selector:
                             found = True
                     # supervisor = py_trees.behaviours.Success(name="Call Supervisor to " + node.name)
-                    supervisor = py_trees.behaviours.Success(
-                        name="Call Supervisor for help"
-                    )
+                    supervisor = py_trees.behaviours.Success(name="Call Supervisor for help")
                     node.add_children([supervisor])
+                    
 
             i += 1
         except KeyboardInterrupt:

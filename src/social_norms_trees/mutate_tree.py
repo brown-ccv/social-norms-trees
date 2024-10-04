@@ -149,7 +149,6 @@ def format_children_with_indices(composite: py_trees.composites.Composite) -> st
     output = label_tree_lines(composite, index_strings)
     return output
 
-
 def format_parents_with_indices(composite: py_trees.composites.Composite) -> str:
     index_strings = []
     i = 0
@@ -165,8 +164,8 @@ def format_parents_with_indices(composite: py_trees.composites.Composite) -> str
 
 
 def format_tree_with_indices(
-    tree: py_trees.behaviour.Behaviour,
-    show_root: bool = False,
+        tree: py_trees.behaviour.Behaviour,
+        show_root: bool = False,
 ) -> str:
     """
     Examples:
@@ -200,7 +199,7 @@ def format_tree_with_indices(
     index = 0
     for i, node in enumerate_nodes(tree):
         if i == 0 and not show_root:
-            index_strings.append("_")
+            index_strings.append('_')
         else:
             index_strings.append(str(index))
         index += 1
@@ -225,7 +224,6 @@ def prompt_identify_node(
     node = next(islice(iterate_nodes(tree), node_index, node_index + 1))
     return node
 
-
 def prompt_identify_parent_node(
     tree: py_trees.behaviour.Behaviour,
     message: str = "Which position?",
@@ -239,7 +237,7 @@ def prompt_identify_parent_node(
         text=text,
         type=int,
     )
-
+    
     node = next(islice(iterate_nodes(tree), node_index, node_index + 1))
     return node
 
@@ -344,19 +342,22 @@ def remove_node(tree: T, node: Optional[py_trees.behaviour.Behaviour] = None) ->
             f"{node}'s parent is None, so we can't remove it. You can't remove the root node."
         )
         action_log = {}
-        return (tree,)
+        return tree,
     elif isinstance(parent_node, py_trees.composites.Composite):
         parent_node.remove_child(node)
         action_log = {
             "type": "remove_node",
             "nodes": [
-                {"id_": node.id_, "nickname": node.nickname},
+                {
+                    "id_": node.id_,
+                    "nickname": node.nickname
+                },
             ],
-            "timestamp": datetime.now().isoformat(),
-        }
+            "timestamp": datetime.now().isoformat(), 
+         }
     else:
         raise NotImplementedError()
-
+    
     return tree, action_log
 
 
@@ -390,6 +391,7 @@ def move_node(
     node.parent.remove_child(node)
     new_parent.insert_child(node, index)
 
+
     if not internal_call:
         action_log = {
             "type": "move_node",
@@ -399,10 +401,10 @@ def move_node(
                     "nickname": node.nickname,
                 },
             ],
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(), 
         }
         return tree, action_log
-
+        
     return tree
 
 
@@ -476,8 +478,13 @@ def exchange_nodes(
             }
         )
     else:
-        nodes.append({"id": node0.id_, "nickname": node0.nickname})
-
+        nodes.append(
+            {
+                "id": node0.id_,
+                "nickname": node0.nickname
+            }
+        )
+    
     if node1.__class__.__name__ != "CustomBehavior":
         nodes.append(
             {
@@ -485,12 +492,17 @@ def exchange_nodes(
             }
         )
     else:
-        nodes.append({"id": node1.id_, "nickname": node1.nickname})
+        nodes.append(
+            {
+                "id": node1.id_,
+                "nickname": node1.nickname
+            }
+        )
 
     action_log = {
         "type": "exchange_nodes",
         "nodes": nodes,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now().isoformat(), 
     }
     return tree, action_log
 
@@ -498,15 +510,16 @@ def exchange_nodes(
 def prompt_select_node(behavior_library, text):
 
     for idx, tree_name in enumerate(behavior_library.behaviors.keys(), 1):
-        print(f"{idx}. {tree_name}")
+        print(f"{idx}. {tree_name}")    
+
 
     node_index = click.prompt(
         text=text,
         type=int,
     )
 
-    node_key = list(behavior_library.behaviors.keys())[node_index - 1]
-
+    node_key = list(behavior_library.behaviors.keys())[node_index-1]
+    
     return behavior_library.behaviors[node_key]
 
 
@@ -521,28 +534,32 @@ def add_node(
 
     """
 
-    behavior = prompt_select_node(
-        behavior_library, f"Which behavior do you want to add?"
-    )
-
+    
+    behavior = prompt_select_node(behavior_library, f"Which behavior do you want to add?")
+    
     new_node = CustomBehavior(
-        name=behavior["nickname"], id_=behavior["id"], nickname=behavior["nickname"]
-    )
-
+                    name=behavior['nickname'],
+                    id_=behavior['id'],
+                    nickname=behavior['nickname']
+                )
+    
     new_parent = prompt_identify_parent_node(
         tree, f"What should its parent be?", display_nodes=True
     )
 
     index = prompt_identify_child_index(new_parent)
-
+   
     assert isinstance(new_parent, py_trees.composites.Composite)
 
     new_parent.insert_child(new_node, index)
-
+        
     action_log = {
         "type": "add_node",
-        "node": {"id": new_node.id_, "nickname": new_node.nickname},
-        "timestamp": datetime.now().isoformat(),
+        "node": {
+                "id": new_node.id_,
+                "nickname": new_node.nickname
+            },
+        "timestamp": datetime.now().isoformat(), 
     }
 
     return tree, action_log
