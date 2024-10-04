@@ -1,7 +1,7 @@
 class BehaviorLibrary:
     def __init__(self, behaviors):
         self.behaviors = behaviors
-        
+
     def get_behavior_by_nickname(self, nickname):
         return self.behaviors.get(nickname)
 
