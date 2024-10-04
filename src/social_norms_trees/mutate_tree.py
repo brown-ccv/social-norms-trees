@@ -254,8 +254,7 @@ def prompt_identify_tree_iterator_index(
     show_root: bool = False,
 ) -> int:
     if display_nodes:
-        format_tree_text, index_options = format_tree_with_indices(
-            tree, show_root)
+        format_tree_text, index_options = format_tree_with_indices(tree, show_root)
         text = f"{format_tree_text}\n{message}"
     else:
         _, index_options = format_tree_with_indices(tree, show_root)
@@ -463,17 +462,14 @@ def exchange_nodes(
     """
 
     if node0 is None:
-        node0 = prompt_identify_node(
-            tree, f"Which node do you want to switch?")
+        node0 = prompt_identify_node(tree, f"Which node do you want to switch?")
     if node1 is None:
         node1 = prompt_identify_node(
             tree, f"Which node do you want to switch?", display_nodes=False
         )
 
-    node0_parent, node0_index = node0.parent, node0.parent.children.index(
-        node0)
-    node1_parent, node1_index = node1.parent, node1.parent.children.index(
-        node1)
+    node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
+    node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
 
     tree = move_node(tree, node0, node1_parent, node1_index, True)
     tree = move_node(tree, node1, node0_parent, node0_index, True)
@@ -519,11 +515,9 @@ def prompt_select_node(behavior_library, text):
         type=int,
     )
     choices = [str(i + 1) for i in range(len(behavior_library.behaviors))]
-    node_index = click.prompt(
-        text=text, type=click.Choice(choices), show_choices=False)
+    node_index = click.prompt(text=text, type=click.Choice(choices), show_choices=False)
 
-    node_key = list(behavior_library.behavior_from_display_name.keys())[
-        node_index - 1]
+    node_key = list(behavior_library.behavior_from_display_name.keys())[node_index - 1]
 
     return behavior_library.behavior_from_display_name[node_key]
 
