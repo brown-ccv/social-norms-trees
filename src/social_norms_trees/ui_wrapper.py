@@ -163,15 +163,9 @@ def main():
     #load tree to run experiment on, and behavior library
     
     RESOURCES_FILE = "resources.json"
-    try:
-        original_tree, behavior_library, context_paragraph = load_resources(RESOURCES_FILE)
-        print(f"\nContext of this experiment: {context_paragraph}")
+    original_tree, behavior_library, context_paragraph = load_resources(RESOURCES_FILE)
+    print(f"\nContext of this experiment: {context_paragraph}")
 
-    except Exception as e:
-        print(f"An error occured when loading resources for this experiment: {e}\n")
-        print("\nSimulation has ended.")
-
-        return
 
     participant_id, experiment_id = experiment_setup(db, original_tree)
     db = run_experiment(db, original_tree, experiment_id, behavior_library)
