@@ -249,7 +249,7 @@ def mutate_chooser(*fs: Union[Callable], message="Which action?"):
         )
         + f"\n{message}"
     )
-    i = click.prompt(text=text, type=click.IntRange(0, n_fs))
+    i = click.prompt(text=text, type=click.IntRange(0, n_fs-1))
     f = mutate_ui(fs[i])
 
     return f
