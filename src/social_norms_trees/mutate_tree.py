@@ -166,7 +166,7 @@ def format_parents_with_indices(composite: py_trees.composites.Composite) -> str
 def format_tree_with_indices(
         tree: py_trees.behaviour.Behaviour,
         show_root: bool = False,
-) -> str:
+) ->  tuple[str, List[str]]:
     """
     Examples:
         >>> print(format_tree_with_indices(py_trees.behaviours.Dummy()))
@@ -204,8 +204,8 @@ def format_tree_with_indices(
             index_strings.append(str(index))
         index += 1
     output = label_tree_lines(tree, index_strings)
-
-    return output
+    
+    return output, index_strings[1:]
 
 
 def say(message):
@@ -249,14 +249,17 @@ def prompt_identify_tree_iterator_index(
     show_root: bool = False,
 ) -> int:
     if display_nodes:
-        text = f"{format_tree_with_indices(tree, show_root)}\n{message}"
+        format_tree_text, index_options = format_tree_with_indices(tree, show_root)
+        text = f"{format_tree_text}\n{message}"
     else:
+        _, index_options = format_tree_with_indices(tree, show_root)
         text = f"{message}"
     node_index = click.prompt(
         text=text,
-        type=int,
+        type=click.Choice(index_options, case_sensitive=False),
+        show_choices=False
     )
-    return node_index
+    return int(node_index)
 
 
 def prompt_identify_child_index(
@@ -512,15 +515,17 @@ def prompt_select_node(behavior_library, text):
     for idx, tree_name in enumerate(behavior_library.behaviors.keys(), 1):
         print(f"{idx}. {tree_name}")    
 
-
+    choices = [str(i + 1) for i in range(len(behavior_library.behaviors))]
     node_index = click.prompt(
         text=text,
-        type=int,
+        type=click.Choice(choices),
+        show_choices=False
     )
 
-    node_key = list(behavior_library.behaviors.keys())[node_index-1]
+    node_key = list(behavior_library.behaviors.keys())[int(node_index)-1]
+    behavior = behavior_library.behaviors[node_key]
     
-    return behavior_library.behaviors[node_key]
+    return behavior
 
 
 def add_node(
