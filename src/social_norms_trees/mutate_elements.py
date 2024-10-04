@@ -5,6 +5,7 @@ import logging
 from types import GenericAlias, NoneType
 from typing import Callable, List, Tuple, TypeVar, Union, Dict
 import click
+import json
 import py_trees
 from social_norms_trees.mutate_tree import (
     prompt_identify_node,
@@ -43,7 +44,7 @@ def remove(node: ExistingNode) -> ExistingNode:
     """
     if node.parent is None:
         msg = (
-            f"%s's parent is None, so we can't remove it. You can't remove the root node."
+            f"%s's parent is None, so we can't remove it. We can't remove the root node."
             % (node)
         )
         raise ValueError(msg)
@@ -204,6 +205,12 @@ def exchange(
 
     return
 
+class QuitException(click.ClickException):
+    pass
+
+def quit():
+    """Finish the experiment."""
+    raise QuitException("User quit the experiment.")
 
 def mutate_chooser(*fs: Union[Callable], message="Which action?"):
     n_fs = len(fs)
@@ -309,8 +316,36 @@ if __name__ == "__main__":
         return tree, library
     
     tree, library = init_tree()
-    print(py_trees.display.ascii_tree(tree))
-    while f := mutate_chooser(insert, move, exchange, remove):
-        results = f(tree, library)
-        _logger.debug(results)
+    # print(json.dumps(tree))
+    protocol = []
+
+    try:
         print(py_trees.display.ascii_tree(tree))
+        
+        # The main loop of the experiment    
+        while f := mutate_chooser(insert, move, exchange, remove, quit):
+            try:
+                results = f(tree, library)
+                _logger.debug(results)
+                protocol.append(results)
+                print(py_trees.display.ascii_tree(tree))
+            # If we have any errors raised by the function, like wrong values, 
+            # we don't want to crash.
+            except ValueError as e:
+                print(f"\n{e}")
+                continue
+    
+    # If the user calls the "quit" function, then we want to exit
+    except QuitException as e:
+        _logger.debug(e)
+    
+    # If the user does a keyboard interrupt, then we want to exit
+    except click.exceptions.Abort as e:
+        print("\n")
+        msg = "Aborted"
+        _logger.debug(msg)
+    
+    # Save the results
+    finally:
+        _logger.info("finishing experiment")
+        # print(json.dumps(protocol))
