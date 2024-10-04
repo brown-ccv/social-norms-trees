@@ -512,7 +512,7 @@ def exchange_nodes(
 
 def prompt_select_node(behavior_library, text):
 
-    for idx, tree_name in enumerate(behavior_library.behaviors.keys(), 1):
+    for idx, tree_name in enumerate(behavior_library.behavior_from_display_name.keys(), 1):
         print(f"{idx}. {tree_name}")    
 
     choices = [str(i + 1) for i in range(len(behavior_library.behaviors))]
@@ -522,10 +522,9 @@ def prompt_select_node(behavior_library, text):
         show_choices=False
     )
 
-    node_key = list(behavior_library.behaviors.keys())[int(node_index)-1]
-    behavior = behavior_library.behaviors[node_key]
+    node_key = list(behavior_library.behavior_from_display_name.keys())[node_index-1]
     
-    return behavior
+    return behavior_library.behavior_from_display_name[node_key]
 
 
 def add_node(
@@ -542,7 +541,7 @@ def add_node(
     
     behavior = prompt_select_node(behavior_library, f"Which behavior do you want to add?")
     
-    if behavior['type'] == "Dummy":
+    if behavior['type'] == "Behavior":
         new_node = CustomBehavior(
                         name=behavior['display_name'],
                         id_=behavior['id'],
