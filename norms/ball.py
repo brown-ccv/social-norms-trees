@@ -147,10 +147,9 @@ def create_root() -> py_trees.behaviour.Behaviour:
         eventually=py_trees.common.Status.SUCCESS,
     )
     approach = py_trees.behaviours.Running(name="Approach Ball")
-    
+
     move_to_ball.add_children([isClose, approach])
 
-    
     isGrasped = py_trees.behaviours.StatusQueue(
         name="Ball Grasped?",
         queue=[
@@ -160,7 +159,7 @@ def create_root() -> py_trees.behaviour.Behaviour:
         eventually=py_trees.common.Status.SUCCESS,
     )
     grasp = py_trees.behaviours.Running(name="Grasp Ball")
-    
+
     obtain_ball.add_children([isGrasped, grasp])
 
     return root
