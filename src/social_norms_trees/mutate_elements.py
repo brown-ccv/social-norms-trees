@@ -15,11 +15,24 @@ from social_norms_trees.mutate_tree import (
 
 _logger = logging.getLogger(__name__)
 
+# =============================================================================
+# Argument types
+# =============================================================================
+
 ExistingNode = TypeVar("ExistingNode", bound=py_trees.behaviour.Behaviour)
 NewNode = TypeVar("NewNode", bound=py_trees.behaviour.Behaviour)
 CompositeIndex = TypeVar(
     "CompositeIndex", bound=Tuple[py_trees.composites.Composite, int]
 )
+
+# =============================================================================
+# Atomic operations
+# =============================================================================
+
+# The very top line of each operation's docstring is used as the
+# description of the operation in the UI, so it's required.
+# The argument annotations are vital, because they tell the UI which prompt
+# to use.
 
 
 def remove(node: ExistingNode) -> ExistingNode:
@@ -207,16 +220,21 @@ def exchange(
     return
 
 
-class QuitException(click.ClickException):
-    pass
+# =============================================================================
+# User Interface
+# =============================================================================
 
+# Wrapper functions for the atomic operations which give them a UI.
 
-def quit():
-    """Finish the experiment."""
-    raise QuitException("User quit the experiment.")
+MutationResult = namedtuple(
+    "MutationResult", ["result", "tree", "function", "kwargs"])
 
 
 def mutate_chooser(*fs: Union[Callable], message="Which action?"):
+    """Prompt the user to choose one of the functions f.
+
+    Returns the wrapped version of the function.
+    """
     n_fs = len(fs)
     docstring_summaries = [f_.__doc__.split("\n")[0] for f_ in fs]
     text = (
@@ -234,14 +252,15 @@ def mutate_chooser(*fs: Union[Callable], message="Which action?"):
     return f
 
 
-MutationResult = namedtuple(
-    "MutationResult", ["result", "tree", "function", "kwargs"])
-
-
 def mutate_ui(
     f,
 ) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behaviour.Behaviour]], Dict]:
-    """Factory function for a tree mutator UI"""
+    """Factory function for a tree mutator UI.
+
+    This creates a version of the atomic function `f`
+    which prompts the user for the appropriate arguments 
+    based on `f`'s type annotations.
+    """
 
     signature = inspect.signature(f)
 
@@ -263,6 +282,7 @@ def mutate_ui(
 
 
 def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
+    """Prompt the user to specify nodes and positions in the tree."""
     annotation_ = str(annotation)
     assert isinstance(annotation_, str)
 
@@ -291,6 +311,15 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         _logger.debug("in 'else'")
         msg = "Can't work out what to do with %s" % annotation
         raise NotImplementedError(msg)
+
+
+class QuitException(click.ClickException):
+    pass
+
+
+def quit():
+    """Finish the experiment."""
+    raise QuitException("User quit the experiment.")
 
 
 if __name__ == "__main__":
