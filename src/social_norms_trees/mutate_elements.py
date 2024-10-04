@@ -205,32 +205,40 @@ def exchange(
 
     return
 
+
 class QuitException(click.ClickException):
     pass
+
 
 def quit():
     """Finish the experiment."""
     raise QuitException("User quit the experiment.")
 
+
 def mutate_chooser(*fs: Union[Callable], message="Which action?"):
     n_fs = len(fs)
     docstring_summaries = [f_.__doc__.split("\n")[0] for f_ in fs]
-    text = "\n".join(
-        [
-            f"{i}: {docstring_summary}"
-            for i, docstring_summary in enumerate(docstring_summaries)
-        ]
-        
-    ) + f"\n{message}"
+    text = (
+        "\n".join(
+            [
+                f"{i}: {docstring_summary}"
+                for i, docstring_summary in enumerate(docstring_summaries)
+            ]
+        )
+        + f"\n{message}"
+    )
     i = click.prompt(text=text, type=click.IntRange(0, n_fs))
     f = mutate_ui(fs[i])
 
     return f
 
+
 MutationResult = namedtuple("MutationResult", ["result", "tree", "function", "kwargs"])
 
 
-def mutate_ui(f) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behaviour.Behaviour]], Dict]:
+def mutate_ui(
+    f,
+) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behaviour.Behaviour]], Dict]:
     """Factory function for a tree mutator UI"""
 
     signature = inspect.signature(f)
@@ -244,7 +252,9 @@ def mutate_ui(f) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behavi
             value = prompt_get_mutate_arguments(annotation, tree, library)
             kwargs[parameter_name] = value
         inner_result = f(**kwargs)
-        return_value = MutationResult(result=inner_result, tree=tree, function=f, kwargs=kwargs)
+        return_value = MutationResult(
+            result=inner_result, tree=tree, function=f, kwargs=kwargs
+        )
         return return_value
 
     return f_inner
@@ -314,37 +324,37 @@ if __name__ == "__main__":
         )
         library = [py_trees.behaviours.Success(), py_trees.behaviours.Failure()]
         return tree, library
-    
+
     tree, library = init_tree()
     # print(json.dumps(tree))
     protocol = []
 
     try:
         print(py_trees.display.ascii_tree(tree))
-        
-        # The main loop of the experiment    
+
+        # The main loop of the experiment
         while f := mutate_chooser(insert, move, exchange, remove, quit):
             try:
                 results = f(tree, library)
                 _logger.debug(results)
                 protocol.append(results)
                 print(py_trees.display.ascii_tree(tree))
-            # If we have any errors raised by the function, like wrong values, 
+            # If we have any errors raised by the function, like wrong values,
             # we don't want to crash.
             except ValueError as e:
                 print(f"\n{e}")
                 continue
-    
+
     # If the user calls the "quit" function, then we want to exit
     except QuitException as e:
         _logger.debug(e)
-    
+
     # If the user does a keyboard interrupt, then we want to exit
     except click.exceptions.Abort as e:
         print("\n")
         msg = "Aborted"
         _logger.debug(msg)
-    
+
     # Save the results
     finally:
         _logger.info("finishing experiment")
