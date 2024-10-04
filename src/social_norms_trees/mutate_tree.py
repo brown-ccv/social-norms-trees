@@ -353,7 +353,7 @@ def remove_node(tree: T, node: Optional[py_trees.behaviour.Behaviour] = None) ->
             "nodes": [
                 {
                     "id_": node.id_,
-                    "nickname": node.nickname
+                    "display_name": node.display_name
                 },
             ],
             "timestamp": datetime.now().isoformat(), 
@@ -401,7 +401,7 @@ def move_node(
             "nodes": [
                 {
                     "id": node.id_,
-                    "nickname": node.nickname,
+                    "display_name": node.display_name,
                 },
             ],
             "timestamp": datetime.now().isoformat(), 
@@ -477,28 +477,28 @@ def exchange_nodes(
     if node0.__class__.__name__ != "CustomBehavior":
         nodes.append(
             {
-                "nickname": node0.name,
+                "display_name": node0.name,
             }
         )
     else:
         nodes.append(
             {
                 "id": node0.id_,
-                "nickname": node0.nickname
+                "display_name": node0.display_name
             }
         )
     
     if node1.__class__.__name__ != "CustomBehavior":
         nodes.append(
             {
-                "nickname": node1.name,
+                "display_name": node1.display_name,
             }
         )
     else:
         nodes.append(
             {
                 "id": node1.id_,
-                "nickname": node1.nickname
+                "display_name": node1.display_name
             }
         )
 
@@ -543,9 +543,9 @@ def add_node(
     behavior = prompt_select_node(behavior_library, f"Which behavior do you want to add?")
     
     new_node = CustomBehavior(
-                    name=behavior['nickname'],
+                    name=behavior['display_name'],
                     id_=behavior['id'],
-                    nickname=behavior['nickname']
+                    display_name=behavior['display_name']
                 )
     
     new_parent = prompt_identify_parent_node(
@@ -562,7 +562,7 @@ def add_node(
         "type": "add_node",
         "node": {
                 "id": new_node.id_,
-                "nickname": new_node.nickname
+                "display_name": new_node.display_name
             },
         "timestamp": datetime.now().isoformat(), 
     }
