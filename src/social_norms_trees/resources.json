@@ -57,49 +57,73 @@
             }
         ]
     },
-    "behavior_library": 
+    "behavior_library": [
         {
-            "Behavior A": {
             "id": "001",
-            "nickname": "Behavior A",
-            "type": "Dummy"
+            "display_name": "Behavior A",
+            "type": "Behavior",
+            "show": true
         },
-        "Behavior B": {
+        {
             "id": "002",
-            "nickname": "Behavior B",
-            "type": "Dummy"
+            "display_name": "Behavior B",
+            "type": "Behavior",
+            "show": true
         },
-        "Behavior C": {
+        {
             "id": "003",
-            "nickname": "Behavior C",
-            "type": "Dummy"
+            "display_name": "Behavior C",
+            "type": "Behavior",
+            "show": true
         },
-        "Behavior D": {
+        {
             "id": "004",
-            "nickname": "Behavior D",
-            "type": "Dummy"
+            "display_name": "Behavior D",
+            "type": "Behavior",
+            "show": true
         },
-        "Behavior E": {
+        {
             "id": "005",
-            "nickname": "Behavior E",
-            "type": "Dummy"
+            "display_name": "Behavior E",
+            "type": "Behavior",
+            "show": true
         },
-        "Behavior F": {
+        {
             "id": "006",
-            "nickname": "Behavior F",
-            "type": "Dummy"
+            "display_name": "Behavior F",
+            "type": "Behavior",
+            "show": true
         },
-        "Behavior G": {
+        {
             "id": "007",
-            "nickname": "Behavior G",
-            "type": "Dummy"
+            "display_name": "Behavior G",
+            "type": "Behavior",
+            "show": true
         },
-        "Behavior H": {
+        {
             "id": "008",
-            "nickname": "Behavior H",
-            "type": "Dummy"
+            "display_name": "Behavior H",
+            "type": "Behavior",
+            "show": true
+        },
+        {
+            "id": "009",
+            "display_name": "Sequence A",
+            "type": "Sequence",
+            "show": false
+        },
+        {
+            "id": "010",
+            "display_name": "Sequence B",
+            "type": "Sequence",
+            "show": false
+        },
+        {
+            "id": "011",
+            "display_name": "Sequence C",
+            "type": "Sequence",
+            "show": false
         }
-
-    },
+    ],
     "context": "This is a sample paragraph that describes the context of the environment in which the robot is operating. This context might affect the decision making, rendering some actions relevant and others less relevant."
 }
