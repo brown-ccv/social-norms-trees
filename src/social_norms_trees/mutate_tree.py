@@ -184,8 +184,6 @@ def format_children_with_indices(composite: py_trees.composites.Composite) -> st
         else:
             index_strings.append("_")
 
-    index_strings.append(str(i))
-
     output = label_tree_lines(composite, index_strings)
     return output
 
