@@ -44,6 +44,7 @@ blackboard.register_key(key="isBallGrasped", access=py_trees.common.Access.WRITE
 blackboard.isBallClose = False
 blackboard.isBallGrasped = False
 
+
 def description() -> str:
     """
     Print description and usage information about the program.
@@ -146,28 +147,26 @@ def create_root() -> py_trees.behaviour.Behaviour:
 
     print(blackboard)
 
-
     isClose = py_trees.behaviours.CheckBlackboardVariableValue(
-                name="Ball Close?",
-                check=py_trees.common.ComparisonExpression(
-                    variable="isBallClose", value=True, operator=operator.eq
-                ),
-            )
+        name="Ball Close?",
+        check=py_trees.common.ComparisonExpression(
+            variable="isBallClose", value=True, operator=operator.eq
+        ),
+    )
 
     approach = py_trees.behaviours.Running(name="Approach Ball")
-    
+
     move_to_ball.add_children([isClose, approach])
 
-
     isGrasped = py_trees.behaviours.CheckBlackboardVariableValue(
-                name="Ball Grasped?",
-                check=py_trees.common.ComparisonExpression(
-                    variable="isBallGrasped", value=True, operator=operator.eq
-                ),
-            )
+        name="Ball Grasped?",
+        check=py_trees.common.ComparisonExpression(
+            variable="isBallGrasped", value=True, operator=operator.eq
+        ),
+    )
 
     grasp = py_trees.behaviours.Running(name="Grasp Ball")
-    
+
     obtain_ball.add_children([isGrasped, grasp])
 
     return root
