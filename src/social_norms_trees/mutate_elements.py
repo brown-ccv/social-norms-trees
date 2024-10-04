@@ -211,8 +211,10 @@ def exchange(
                 --> A
     """
 
-    node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
-    node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
+    node0_parent, node0_index = node0.parent, node0.parent.children.index(
+        node0)
+    node1_parent, node1_index = node1.parent, node1.parent.children.index(
+        node1)
 
     move(node0, (node1_parent, node1_index))
     move(node1, (node0_parent, node0_index))
@@ -363,6 +365,204 @@ def prompt_identify_node(
     return node
 
 
+def prompt_identify_position(
+    tree: py_trees.behaviour.Behaviour,
+    message: str = "Which position?",
+    display_nodes: bool = True,
+) -> py_trees.behaviour.Behaviour:
+    """
+    Example:
+        >>> s1 = py_trees.composites.Sequence("S1", False, children=[py_trees.behaviours.Dummy()])
+        >>> prompt_identify_position(s1)
+          [-] S1
+        0: -->
+              --> Dummy
+        1: -->
+
+
+        >>> s2 = py_trees.composites.Sequence("S2", False, children=[py_trees.behaviours.Failure()])
+        >>> tree = py_trees.composites.Sequence("S0", False, children=[s1, s2])
+        >>> prompt_identify_position(tree)
+        Option 0:
+          [-] S0
+        0: ----->
+              [-] S1
+        1: ------->
+                --> Dummy
+        2: ------->
+        3: ----->
+              [-] S2
+        4: ------->
+                --> Failure
+        5: ------->
+        6: ----->
+
+        Option 1:
+          [-] S0
+        0: ----->
+              [-] S1
+        0.0: ------->
+                --> Dummy
+        0.1: ------->
+        1: ----->
+              [-] S2
+        1.0: ------->
+                --> Failure
+        1.1: ------->
+        2: ----->
+
+        Option 2:
+        [-] S0
+            --> {0}
+            [-] S1
+              --> {0.0}
+              --> Dummy
+              --> {0.1}
+            --> {1}
+            [-] S2
+              --> {1.0}
+              --> Failure
+              --> {1.1}
+            --> {2}
+
+        Option 3:
+        [-] S0
+            --> {1}
+            [-] S1
+              --> {2}
+              --> Dummy
+              --> {3}
+            --> {4}
+            [-] S2
+              --> {5}
+              --> Failure
+              --> {6}
+            --> {7}
+
+        Option 4:
+        [-] S0
+            --> {⚡️ 1}
+            [-] S1
+                --> {⚡️ 2}
+                --> Dummy
+                --> {⚡️ 3}
+            --> {⚡️ 4}
+            [-] S2
+                --> {⚡️ 5}
+                --> Failure
+                --> {⚡️ 6}
+            --> {⚡️ 7}
+
+
+        Option 5:
+        Where: [before/after]
+        Which: [user types display name]
+
+        Option 6:
+        [-] S0
+               {⚡️ 1} <--
+            [-] S1
+                    {⚡️ 2} <--
+                --> Dummy
+                    {⚡️ 3} <--
+                {⚡️ 4} <--
+            [-] S2
+                    {⚡️ 5} <--
+                --> Failure
+                    {⚡️ 6} <--
+                {⚡️ 7} <--
+
+
+        Option 7:
+        [-] S0
+               {⚡️ 1}
+            [-] S1
+                    {⚡️ 2}
+                --> Dummy
+                    {⚡️ 3}
+                {⚡️ 4}
+            [-] S2
+                    {⚡️ 5}
+                --> Failure
+                    {⚡️ 6}
+                {⚡️ 7}
+
+        Option 8:
+        [-] S0
+            --> _1
+            [-] S1
+                --> _2
+                --> Dummy
+                --> _3
+            --> _4
+            [-] S2
+                --> _5
+                --> Failure
+                --> _6
+            --> _7
+
+        Option 9:
+        [-] S0
+    1:          --> _
+            [-] S1
+    2:          --> _
+                --> Dummy
+    3:          --> _
+    4:      --> _
+            [-] S2
+    5:          --> _
+                --> Failure
+    6:          --> _
+    7:      --> _
+
+
+        Option 10:
+        [-] S0
+    1:          --> ______
+            [-] S1
+    2:          --> ______
+                --> Dummy
+    3:          --> ______
+    4:      --> ______
+            [-] S2
+    5:          --> ______
+                --> Failure
+    6:          --> ______
+    7:      --> ______
+
+    Option 11: Preview
+
+    Chose a "Success" node:
+        [-] S0
+    1:          --> *Success*
+            [-] S1
+    2:          --> *Success*
+                --> Dummy
+    3:          --> *Success*
+    4:      --> *Success*
+            [-] S2
+    5:          --> *Success*
+                --> Failure
+    6:          --> *Success*
+    7:      --> *Success*
+
+    """
+
+    key_node_mapping = {str(i): n for i, n in enumerate_nodes(tree)}
+    labels = key_node_mapping.keys()
+
+    if display_nodes:
+        text = f"{(label_tree_lines(tree=tree, labels=labels))}\n{message}"
+    else:
+        text = f"{message}"
+
+    key = click.prompt(text=text, type=click.Choice(labels))
+
+    node = key_node_mapping[key]
+
+    return node
+
+
 def prompt_identify_library_node(
     library, message: str = "Which action from the library?", display_nodes: bool = True
 ) -> py_trees.behaviour.Behaviour:
@@ -389,7 +589,8 @@ def format_library_with_indices(library: List[py_trees.behaviour.Behaviour]):
 
 
 # Wrapper functions for the atomic operations which give them a UI.
-MutationResult = namedtuple("MutationResult", ["result", "tree", "function", "kwargs"])
+MutationResult = namedtuple(
+    "MutationResult", ["result", "tree", "function", "kwargs"])
 
 
 def mutate_chooser(*fs: Union[Callable], message="Which action?"):
@@ -458,12 +659,14 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         return node
     elif annotation_ == str(CompositeIndex):
         _logger.debug("in CompositeIndex")
-        composite_node = prompt_identify_parent_node(tree, message="Which parent?")
+        composite_node = prompt_identify_parent_node(
+            tree, message="Which parent?")
         index = prompt_identify_child_index(composite_node)
         return composite_node, index
     elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
-        new_node = prompt_identify_library_node(library, "Which node from the library?")
+        new_node = prompt_identify_library_node(
+            library, "Which node from the library?")
         return new_node
     else:
         _logger.debug("in 'else'")
