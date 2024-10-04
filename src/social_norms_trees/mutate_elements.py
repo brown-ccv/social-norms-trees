@@ -10,10 +10,6 @@ from typing import Callable, List, Tuple, TypeVar, Union, Dict
 import click
 import py_trees
 
-from social_norms_trees.mutate_tree import (
-    prompt_identify_child_index,
-)
-
 _logger = logging.getLogger(__name__)
 
 # =============================================================================
@@ -606,6 +602,79 @@ def prompt_identify_composite(
     return node
 
 
+def prompt_identify_child_index(
+    tree: py_trees.behaviour.Behaviour,
+    message: str = "Which position?",
+    display_nodes: bool = True,
+    skip_label: str = "_",
+) -> int:
+    labels = []
+    i = 0
+    for node in iterate_nodes(tree):
+        if node in tree.children:
+            labels.append(str(i))
+            i += 1
+        else:
+            labels.append(skip_label)
+    labels.append(str(i))
+
+    if display_nodes:
+        text = f"{(label_tree_lines(tree=tree, labels=labels))}\n{message}"
+    else:
+        text = f"{message}"
+    allowed_labels = [l for l in labels if l != skip_label]
+    key = click.prompt(text=text, type=click.Choice(allowed_labels))
+    node_index = int(key)
+
+    return node_index
+
+
+def format_children_with_indices(composite: py_trees.composites.Composite) -> str:
+    """
+    Examples:
+        >>> tree = py_trees.composites.Sequence("s1", False, children=[
+        ...         py_trees.behaviours.Dummy(),
+        ...         py_trees.behaviours.Success(),
+        ...         s2 := py_trees.composites.Sequence("s2", False, children=[
+        ...             py_trees.behaviours.Dummy(),
+        ...         ]),
+        ...         s3 := py_trees.composites.Sequence("", False, children=[
+        ...             py_trees.behaviours.Failure(),
+        ...             py_trees.behaviours.Periodic("p", n=1),
+        ...         ]),
+        ... ])
+        >>> print(format_children_with_indices(tree))  # doctest: +NORMALIZE_WHITESPACE
+        _:  [-] s1
+        0:     --> Dummy
+        1:     --> Success
+        2:     [-] s2
+        _:         --> Dummy
+        3:     [-]
+        _:         --> Failure
+        _:         --> p
+
+        >>> print(format_children_with_indices(s2))  # doctest: +NORMALIZE_WHITESPACE
+        _:  [-] s2
+        0:      --> Dummy
+
+        >>> print(format_children_with_indices(s3))  # doctest: +NORMALIZE_WHITESPACE
+        _:  [-]
+        0:      --> Failure
+        1:      --> p
+    """
+    index_strings = []
+    i = 0
+    for b in iterate_nodes(composite):
+        if b in composite.children:
+            index_strings.append(str(i))
+            i += 1
+        else:
+            index_strings.append("_")
+
+    output = label_tree_lines(composite, index_strings)
+    return output
+
+
 def prompt_identify_library_node(
     library, message: str = "Which action from the library?", display_nodes: bool = True
 ) -> py_trees.behaviour.Behaviour:
@@ -816,4 +885,6 @@ def main():
 
 
 if __name__ == "__main__":
+    tree, _ = load_experiment()
+    i = prompt_identify_child_index(tree)
     main()
