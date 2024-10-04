@@ -1,6 +1,7 @@
 from collections import namedtuple
 import inspect
 from functools import wraps
+from itertools import islice
 import logging
 import sys
 from types import GenericAlias
@@ -10,10 +11,8 @@ import click
 import py_trees
 
 from social_norms_trees.mutate_tree import (
-    prompt_identify_node,
     prompt_identify_parent_node,
     prompt_identify_child_index,
-    prompt_identify_library_node,
 )
 
 _logger = logging.getLogger(__name__)
@@ -222,13 +221,173 @@ def exchange(
 
     return
 
+# =============================================================================
+# Node and Position Selectors
+# =============================================================================
+
+
+def iterate_nodes(tree: py_trees.behaviour.Behaviour):
+    """
+
+    Examples:
+        >>> list(iterate_nodes(py_trees.behaviours.Dummy()))  # doctest: +ELLIPSIS
+        [<py_trees.behaviours.Dummy object at 0x...>]
+
+        >>> list(iterate_nodes(
+        ...     py_trees.composites.Sequence("", False, children=[
+        ...         py_trees.behaviours.Dummy(),
+        ... ])))  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        [<py_trees.composites.Sequence object at 0x...>,
+         <py_trees.behaviours.Dummy object at 0x...>]
+
+        >>> list(iterate_nodes(
+        ...     py_trees.composites.Sequence("", False, children=[
+        ...         py_trees.behaviours.Dummy(),
+        ...         py_trees.behaviours.Dummy(),
+        ...         py_trees.composites.Sequence("", False, children=[
+        ...             py_trees.behaviours.Dummy(),
+        ...         ]),
+        ... ])))  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        [<py_trees.composites.Sequence object at 0x...>,
+         <py_trees.behaviours.Dummy object at 0x...>,
+         <py_trees.behaviours.Dummy object at 0x...>,
+         <py_trees.composites.Sequence object at 0x...>,
+         <py_trees.behaviours.Dummy object at 0x...>]
+
+    """
+    yield tree
+    for child in tree.children:
+        yield from iterate_nodes(child)
+
+
+def enumerate_nodes(tree: py_trees.behaviour.Behaviour):
+    """
+
+    Examples:
+        >>> list(enumerate_nodes(py_trees.behaviours.Dummy()))  # doctest: +ELLIPSIS
+        [(0, <py_trees.behaviours.Dummy object at 0x...>)]
+
+        >>> list(enumerate_nodes(
+        ...     py_trees.composites.Sequence("", False, children=[
+        ...         py_trees.behaviours.Dummy(),
+        ... ])))  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        [(0, <py_trees.composites.Sequence object at 0x...>),
+         (1, <py_trees.behaviours.Dummy object at 0x...>)]
+
+        >>> list(enumerate_nodes(
+        ...     py_trees.composites.Sequence("s1", False, children=[
+        ...         py_trees.behaviours.Dummy(),
+        ...         py_trees.behaviours.Success(),
+        ...         py_trees.composites.Sequence("s2", False, children=[
+        ...             py_trees.behaviours.Dummy(),
+        ...         ]),
+        ...         py_trees.composites.Sequence("", False, children=[
+        ...             py_trees.behaviours.Failure(),
+        ...             py_trees.behaviours.Periodic("p", n=1),
+        ...         ]),
+        ... ])))  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        [(0, <py_trees.composites.Sequence object at 0x...>),
+         (1, <py_trees.behaviours.Dummy object at 0x...>),
+         (2, <py_trees.behaviours.Success object at 0x...>),
+         (3, <py_trees.composites.Sequence object at 0x...>),
+         (4, <py_trees.behaviours.Dummy object at 0x...>),
+         (5, <py_trees.composites.Sequence object at 0x...>),
+         (6, <py_trees.behaviours.Failure object at 0x...>),
+         (7, <py_trees.behaviours.Periodic object at 0x...>)]
+
+    """
+    return enumerate(iterate_nodes(tree))
+
+
+def label_tree_lines(
+    tree: py_trees.behaviour.Behaviour,
+    labels: List[str],
+    representation=py_trees.display.unicode_tree,
+) -> str:
+    """Label the lines of a tree.
+
+    Examples:
+        >>> print(label_tree_lines(py_trees.behaviours.Dummy(), labels=["0"]))
+        0: --> Dummy
+
+
+        >>> tree = py_trees.composites.Sequence(
+        ...             "S1", 
+        ...             False, 
+        ...             children=[
+        ...                 py_trees.behaviours.Dummy(), 
+        ...                 py_trees.behaviours.Dummy()]
+        ...         )
+
+
+        >>> print(label_tree_lines(tree, labels=["A", "B", "C"]))
+        A: [-] S1
+        B:     --> Dummy
+        C:     --> Dummy
+
+        >>> print(label_tree_lines(tree, labels=["AAA", "BB", "C"]))
+        AAA: [-] S1
+         BB:     --> Dummy
+          C:     --> Dummy
+
+    """
+    max_len = max([len(s) for s in labels])
+    padded_labels = [s.rjust(max_len) for s in labels]
+
+    tree_representation_lines = representation(tree).split("\n")
+    enumerated_tree_representation_lines = [
+        f"{i}: {t}" for i, t in zip(padded_labels, tree_representation_lines)
+    ]
+
+    output = "\n".join(enumerated_tree_representation_lines)
+    return output
+
+
+def prompt_identify_node(
+    tree: py_trees.behaviour.Behaviour,
+    message: str = "Which node?",
+    display_nodes: bool = True
+) -> py_trees.behaviour.Behaviour:
+
+    key_node_mapping = {str(i): n for i, n in enumerate_nodes(tree)}
+    labels = key_node_mapping.keys()
+
+    if display_nodes:
+        text = f"{(label_tree_lines(tree=tree, labels=labels))}\n{message}"
+    else:
+        text = f"{message}"
+
+    key = click.prompt(text=text, type=click.Choice(labels))
+
+    node = key_node_mapping[key]
+
+    return node
+
+
+def prompt_identify_library_node(library, message: str = "Which action from the library?", display_nodes: bool = True) -> py_trees.behaviour.Behaviour:
+    key_node_mapping = {str(i): n for i, n in enumerate(library)}
+
+    if display_nodes:
+        text = f"{format_library_with_indices(library)}\n{message}"
+    else:
+        text = f"{message}"
+    index = click.prompt(text=text, type=click.Choice(key_node_mapping.keys()))
+
+    node = key_node_mapping[index]
+
+    return node
+
+
+def format_library_with_indices(library: List[py_trees.behaviour.Behaviour]):
+    return "\n".join([f"{i}: {n.name}" for i, n in enumerate(library)])
+
 
 # =============================================================================
 # User Interface
 # =============================================================================
 
-# Wrapper functions for the atomic operations which give them a UI.
 
+# Wrapper functions for the atomic operations which give them a UI.
 MutationResult = namedtuple(
     "MutationResult", ["result", "tree", "function", "kwargs"])
 
@@ -305,10 +464,9 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         return composite_node, index
     elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
-        new_node_index = prompt_identify_library_node(
+        new_node = prompt_identify_library_node(
             library, "Which node from the library?"
         )
-        new_node = library[new_node_index]
         return new_node
     else:
         _logger.debug("in 'else'")
@@ -384,17 +542,17 @@ def main():
 
         # The main loop of the experiment
         while f := mutate_chooser(insert, move, exchange, remove, quit):
-            try:
-                results = f(tree, library)
-                _logger.debug(results)
-                protocol.append(results)
-                print(py_trees.display.ascii_tree(tree))
+            # try:
+            results = f(tree, library)
+            _logger.debug(results)
+            protocol.append(results)
+            print(py_trees.display.ascii_tree(tree))
 
             # If we have any errors raised by the function, like wrong values,
             # we don't want to crash.
-            except (ValueError, IndexError, NotImplementedError) as e:
-                _logger.error(f"\n{e}")
-                continue
+            # except (ValueError, IndexError, NotImplementedError) as e:
+            #     _logger.error(f"\n{e}")
+            #     continue
 
     # If the user calls the "quit" function, then we want to exit
     except QuitException as e:
