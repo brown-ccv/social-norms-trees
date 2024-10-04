@@ -5,6 +5,7 @@ import json
 import os
 import uuid
 import py_trees
+import traceback
 
 from social_norms_trees.mutate_tree import move_node, exchange_nodes, remove_node, add_node
 from social_norms_trees.serialize_tree import serialize_tree, deserialize_tree
@@ -95,9 +96,9 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
     # Loop for the actual experiment part, which takes user input to decide which action to take
     print("\nExperiment beginning...\n")
 
-    while(True):
-        
-        try:
+    try:
+        while(True):
+            
             print(py_trees.display.ascii_tree(origin_tree))
             user_choice = click.prompt(
                 "Would you like to perform an action on the behavior tree?",
@@ -134,17 +135,18 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
                 else:
                     print("Invalid choice, please select a valid number (1, 2, 3, or 4).\n")
 
+            #user_choice == "n", end simulation run
             else:
-                db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
-                db[experiment_id]["end_date"] = datetime.now().isoformat()
                 break
-        except:
-            print("Error encountered during this action, experiment will now end.")
-            db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
-            db[experiment_id]["end_date"] = datetime.now().isoformat()
-            break
+        
+    except Exception:
+        print("\nAn error has occured during the experiment, the experiment will now end.")
+        db[experiment_id]["error_log"] = traceback.format_exc()
 
-    return db
+    finally:
+        db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
+        db[experiment_id]["end_date"] = datetime.now().isoformat()
+        return db
    
 
 
