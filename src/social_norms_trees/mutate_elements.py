@@ -316,6 +316,11 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         raise NotImplementedError(msg)
 
 
+# =============================================================================
+# Utility functions
+# =============================================================================
+
+
 class QuitException(Exception):
     pass
 
@@ -325,9 +330,12 @@ def quit():
     raise QuitException("User quit the experiment.")
 
 
-if __name__ == "__main__":
-    import py_trees
+# =============================================================================
+# Main Loop
+# =============================================================================
 
+
+def main():
     logging.basicConfig(level=logging.DEBUG)
 
     def init_tree():
@@ -398,3 +406,7 @@ if __name__ == "__main__":
         _logger.info("finishing experiment")
         # print(json.dumps(protocol))
         sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()
