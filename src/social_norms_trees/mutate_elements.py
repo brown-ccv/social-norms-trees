@@ -11,7 +11,6 @@ import click
 import py_trees
 
 from social_norms_trees.mutate_tree import (
-    prompt_identify_parent_node,
     prompt_identify_child_index,
 )
 
@@ -369,7 +368,7 @@ def prompt_identify_position(
     tree: py_trees.behaviour.Behaviour,
     message: str = "Which position?",
     display_nodes: bool = True,
-) -> py_trees.behaviour.Behaviour:
+) -> Tuple[py_trees.composites.Composite, int]:
     """
     Example:
         >>> s1 = py_trees.composites.Sequence("S1", False, children=[py_trees.behaviours.Dummy()])
@@ -383,6 +382,9 @@ def prompt_identify_position(
         >>> s2 = py_trees.composites.Sequence("S2", False, children=[py_trees.behaviours.Failure()])
         >>> tree = py_trees.composites.Sequence("S0", False, children=[s1, s2])
         >>> prompt_identify_position(tree)
+    """
+    """
+    Better Options:
         Option 0:
           [-] S0
         0: ----->
@@ -547,9 +549,13 @@ def prompt_identify_position(
     7:      --> *Success*
 
     """
-
     key_node_mapping = {str(i): n for i, n in enumerate_nodes(tree)}
-    labels = key_node_mapping.keys()
+    labels = []
+    for key, node in key_node_mapping.items():
+        if isinstance(node, py_trees.composites.Composite):
+            labels.append(key)
+        else:
+            labels.append("_")
 
     if display_nodes:
         text = f"{(label_tree_lines(tree=tree, labels=labels))}\n{message}"
@@ -560,6 +566,43 @@ def prompt_identify_position(
 
     node = key_node_mapping[key]
 
+    return node
+
+
+def prompt_identify_composite(
+    tree: py_trees.behaviour.Behaviour,
+    message: str = "Which composite node?",
+    display_nodes: bool = True,
+    skip_label: str = "_"
+) -> Tuple[py_trees.composites.Composite, int]:
+    """
+    Example:
+        >>> s1 = py_trees.composites.Sequence("S1", False, children=[py_trees.behaviours.Dummy()])
+        >>> prompt_identify_composite(s1)
+          [-] S1
+        0: -->
+              --> Dummy
+        1: -->
+
+
+        >>> s2 = py_trees.composites.Sequence("S2", False, children=[py_trees.behaviours.Failure()])
+        >>> tree = py_trees.composites.Sequence("S0", False, children=[s1, s2])
+        >>> prompt_identify_position(tree)
+    """
+    key_node_mapping = {str(i): n for i, n in enumerate_nodes(tree)}
+    labels = []
+    for key, node in key_node_mapping.items():
+        if isinstance(node, py_trees.composites.Composite):
+            labels.append(key)
+        else:
+            labels.append(skip_label)
+    if display_nodes:
+        text = f"{(label_tree_lines(tree=tree, labels=labels))}\n{message}"
+    else:
+        text = f"{message}"
+    allowed_labels = [l for l in labels if l != skip_label]
+    key = click.prompt(text=text, type=click.Choice(allowed_labels))
+    node = key_node_mapping[key]
     return node
 
 
@@ -659,7 +702,7 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         return node
     elif annotation_ == str(CompositeIndex):
         _logger.debug("in CompositeIndex")
-        composite_node = prompt_identify_parent_node(
+        composite_node = prompt_identify_composite(
             tree, message="Which parent?")
         index = prompt_identify_child_index(composite_node)
         return composite_node, index
