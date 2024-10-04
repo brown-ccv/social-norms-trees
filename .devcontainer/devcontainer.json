@@ -2,5 +2,11 @@
 	"image": "mcr.microsoft.com/devcontainers/base:jammy",
 	"features": {
 		"ghcr.io/devcontainers/features/python:1": {}
-	}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.black-formatter"
+			]
+		}
 }
