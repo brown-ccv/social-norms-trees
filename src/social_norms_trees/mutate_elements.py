@@ -334,44 +334,50 @@ def quit():
 # Main Loop
 # =============================================================================
 
+def load_experiment():
+    """Placeholder function for loading a tree and library (should come from a file)."""
+    tree = py_trees.composites.Sequence(
+        "S0",
+        False,
+        children=[
+            py_trees.behaviours.Dummy("A"),
+            py_trees.composites.Sequence(
+                "S1",
+                memory=False,
+                children=[
+                    py_trees.behaviours.Dummy("B"),
+                    py_trees.behaviours.Dummy("C"),
+                    py_trees.behaviours.Dummy("D"),
+                ],
+            ),
+            py_trees.composites.Selector(
+                "S2",
+                memory=False,
+                children=[
+                    py_trees.behaviours.Dummy("E"),
+                    py_trees.behaviours.Dummy("F"),
+                    py_trees.behaviours.Failure(),
+                ],
+            ),
+            py_trees.behaviours.Success(),
+        ],
+    )
+    library = [py_trees.behaviours.Success(
+    ), py_trees.behaviours.Failure()]
+    return tree, library
+
+
+def save_results(tree, protocol):
+    _logger.info("saving results")
+    print(f"protocol: {protocol}")
+    print(f"tree:\n{py_trees.display.unicode_tree(tree)}")
+
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
-
-    def init_tree():
-        tree = py_trees.composites.Sequence(
-            "S0",
-            False,
-            children=[
-                py_trees.behaviours.Dummy("A"),
-                py_trees.composites.Sequence(
-                    "S1",
-                    memory=False,
-                    children=[
-                        py_trees.behaviours.Dummy("B"),
-                        py_trees.behaviours.Dummy("C"),
-                        py_trees.behaviours.Dummy("D"),
-                    ],
-                ),
-                py_trees.composites.Selector(
-                    "S2",
-                    memory=False,
-                    children=[
-                        py_trees.behaviours.Dummy("E"),
-                        py_trees.behaviours.Dummy("F"),
-                        py_trees.behaviours.Failure(),
-                    ],
-                ),
-                py_trees.behaviours.Success(),
-            ],
-        )
-        library = [py_trees.behaviours.Success(
-        ), py_trees.behaviours.Failure()]
-        return tree, library
-
-    tree, library = init_tree()
-    # print(json.dumps(tree))
+    tree, library = load_experiment()
     protocol = []
+    exit_code = None
 
     try:
         print(py_trees.display.ascii_tree(tree))
@@ -383,10 +389,11 @@ def main():
                 _logger.debug(results)
                 protocol.append(results)
                 print(py_trees.display.ascii_tree(tree))
+
             # If we have any errors raised by the function, like wrong values,
             # we don't want to crash.
-            except ValueError as e:
-                print(f"\n{e}")
+            except (ValueError, IndexError, NotImplementedError) as e:
+                _logger.error(f"\n{e}")
                 continue
 
     # If the user calls the "quit" function, then we want to exit
@@ -395,16 +402,15 @@ def main():
         exit_code = 0
 
     # If the user does a keyboard interrupt, then we want to exit
-    except click.exceptions.Abort as e:
+    except click.exceptions.Abort:
         print("\n")
-        msg = "Aborted"
-        _logger.debug(msg)
+        _logger.error("Program aborted.")
         exit_code = 1
 
     # Save the results
     finally:
-        _logger.info("finishing experiment")
-        # print(json.dumps(protocol))
+        _logger.debug("finally")
+        save_results(tree, protocol)
         sys.exit(exit_code)
 
 
