@@ -2,10 +2,13 @@ from collections import namedtuple
 import inspect
 from functools import wraps
 import logging
+import sys
 from types import GenericAlias
 from typing import Callable, List, Tuple, TypeVar, Union, Dict
+
 import click
 import py_trees
+
 from social_norms_trees.mutate_tree import (
     prompt_identify_node,
     prompt_identify_parent_node,
@@ -313,7 +316,7 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         raise NotImplementedError(msg)
 
 
-class QuitException(click.ClickException):
+class QuitException(Exception):
     pass
 
 
@@ -381,14 +384,17 @@ if __name__ == "__main__":
     # If the user calls the "quit" function, then we want to exit
     except QuitException as e:
         _logger.debug(e)
+        exit_code = 0
 
     # If the user does a keyboard interrupt, then we want to exit
     except click.exceptions.Abort as e:
         print("\n")
         msg = "Aborted"
         _logger.debug(msg)
+        exit_code = 1
 
     # Save the results
     finally:
         _logger.info("finishing experiment")
         # print(json.dumps(protocol))
+        sys.exit(exit_code)
