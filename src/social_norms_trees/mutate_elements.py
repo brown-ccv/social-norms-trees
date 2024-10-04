@@ -460,7 +460,7 @@ def prompt_identify_position(
 
         Option 6:
         [-] S0
-               {⚡️ 1} <--
+            {⚡️ 1} <--
             [-] S1
                     {⚡️ 2} <--
                 --> Dummy
@@ -475,7 +475,7 @@ def prompt_identify_position(
 
         Option 7:
         [-] S0
-               {⚡️ 1}
+            {⚡️ 1}
             [-] S1
                     {⚡️ 2}
                 --> Dummy
@@ -503,7 +503,7 @@ def prompt_identify_position(
 
         Option 9:
         [-] S0
-    1:          --> _
+    1:       --> _
             [-] S1
     2:          --> _
                 --> Dummy
@@ -518,7 +518,7 @@ def prompt_identify_position(
 
         Option 10:
         [-] S0
-    1:          --> ______
+    1:      --> ______
             [-] S1
     2:          --> ______
                 --> Dummy
@@ -534,7 +534,7 @@ def prompt_identify_position(
 
     Chose a "Success" node:
         [-] S0
-    1:          --> *Success*
+    1:      --> *Success*
             [-] S1
     2:          --> *Success*
                 --> Dummy
