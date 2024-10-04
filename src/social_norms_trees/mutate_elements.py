@@ -339,6 +339,13 @@ def label_tree_lines(
     return output
 
 
+# TODO: Split each of these functions into one which
+# returns a labeled representation of the tree,
+# a mapping of allowed values to nodes and
+# a separate function which does the prompting.
+# This should help testing.
+
+
 def prompt_identify_node(
     tree: py_trees.behaviour.Behaviour,
     message: str = "Which node?",
