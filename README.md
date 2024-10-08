@@ -39,6 +39,6 @@ pytest
 
 Run the example experiment:
 ```bash
-social-norms-trees example-experiments/entering-a-room.json
+social-norms-trees examples/entering-a-room.json
 ```
 
