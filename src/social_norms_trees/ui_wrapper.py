@@ -1,4 +1,6 @@
+import pathlib
 import time
+from typing import Annotated
 import click
 from datetime import datetime
 import json
@@ -6,6 +8,8 @@ import os
 import uuid
 import py_trees
 import traceback
+
+import typer
 
 from social_norms_trees.mutate_tree import (
     move_node,
@@ -41,7 +45,8 @@ def experiment_setup(db, origin_tree):
     print("\n")
     participant_id = participant_login()
 
-    experiment_id = initialize_experiment_record(db, participant_id, origin_tree)
+    experiment_id = initialize_experiment_record(
+        db, participant_id, origin_tree)
 
     print("\nSetup Complete.\n")
 
@@ -56,7 +61,8 @@ def participant_login():
 
 def load_resources(file_path):
     try:
-        print(f"\nLoading behavior tree and behavior library from {file_path}...\n")
+        print(
+            f"\nLoading behavior tree and behavior library from {file_path}...\n")
         with open(file_path, "r") as file:
             resources = json.load(file)
 
@@ -131,7 +137,8 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
                     db[experiment_id]["action_history"].append(action_log)
 
                 elif action == 4:
-                    origin_tree, action_log = add_node(origin_tree, behavior_library)
+                    origin_tree, action_log = add_node(
+                        origin_tree, behavior_library)
                     db[experiment_id]["action_history"].append(action_log)
 
                 else:
@@ -155,24 +162,30 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
         return db
 
 
-def main():
+app = typer.Typer()
+
+
+@app.command()
+def main(
+    resources_file: Annotated[pathlib.Path, typer.Argument(help="file with the experimental context, behavior tree, and behavior library")],
+    db_file: Annotated[pathlib.Path, typer.Option(
+        help="file where the experimental results will be written")] = "db.json",
+):
     print("AIT Prototype #1 Simulator")
 
     # TODO: write up some context, assumptions made in the README
 
-    # TODO: user query for files
-    DB_FILE = "db.json"
-    db = load_db(DB_FILE)
+    db = load_db(db_file)
 
     # load tree to run experiment on, and behavior library
 
-    RESOURCES_FILE = "resources.json"
-    original_tree, behavior_library, context_paragraph = load_resources(RESOURCES_FILE)
+    original_tree, behavior_library, context_paragraph = load_resources(
+        resources_file)
     print(f"\nContext of this experiment: {context_paragraph}")
 
     participant_id, experiment_id = experiment_setup(db, original_tree)
     db = run_experiment(db, original_tree, experiment_id, behavior_library)
-    save_db(db, DB_FILE)
+    save_db(db, db_file)
 
     # TODO: define export file, that will be where we export the results to
 
@@ -183,4 +196,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    app()
