@@ -161,7 +161,10 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
         return db
 
 
-def main(db_file: pathlib.Path = "db.json"):
+def main(
+    db_file: pathlib.Path = "db.json",
+    resources_file: pathlib.Path = "resources.json",
+):
     print("AIT Prototype #1 Simulator")
 
     # TODO: write up some context, assumptions made in the README
@@ -170,9 +173,8 @@ def main(db_file: pathlib.Path = "db.json"):
 
     # load tree to run experiment on, and behavior library
 
-    RESOURCES_FILE = "resources.json"
     original_tree, behavior_library, context_paragraph = load_resources(
-        RESOURCES_FILE)
+        resources_file)
     print(f"\nContext of this experiment: {context_paragraph}")
 
     participant_id, experiment_id = experiment_setup(db, original_tree)
