@@ -75,7 +75,9 @@ classifiers = [  # Optional
 
 dependencies = [ # Optional
   "py_trees",
-  "websockets"
+  "websockets",
+  "click",
+  "typer",
 ]
 
 # List additional groups of dependencies here (e.g. development
