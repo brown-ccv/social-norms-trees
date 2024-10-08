@@ -1,0 +1,84 @@
+{
+    "context": "A nurse assistant robot in a hospital is taking medicine to Mrs. Jones during the day. The robot has already collected the medicine and enters the corridor outside Mrs. Jones' room. It needs to enter the room to take Mrs. Jones her medicine.",
+    "behavior_tree": {
+        "name": "",
+        "type": "Sequence",
+        "children": [
+            {
+                "name": "Approach the door",
+                "type": "Behavior"
+            },
+            {
+                "name": "Open the door",
+                "type": "Behavior"
+            },
+            {
+                "name": "Go through the doorway",
+                "type": "Behavior"
+            }
+        ]
+    },
+    "behavior_library": [
+        {
+            "id": "anonymous-sequence",
+            "display_name": "",
+            "type": "Sequence",
+            "show": false
+        },
+        {
+            "id": "approach-door",
+            "display_name": "Approach the door",
+            "type": "Behavior",
+            "show": true
+        },
+        {
+            "id": "open-door",
+            "display_name": "Open the door",
+            "type": "Behavior",
+            "show": true
+        },
+        {
+            "id": "go-through-doorway",
+            "display_name": "Go through the doorway",
+            "type": "Behavior",
+            "show": true
+        },
+        {
+            "id": "knock-on-the-door",
+            "display_name": "Knock on the door",
+            "type": "Behavior",
+            "show": true
+        },
+        {
+            "id": "sing-a-song",
+            "display_name": "Sing a song",
+            "type": "Behavior",
+            "show": true
+        },
+        {
+            "id": "announce-your-presence",
+            "display_name": "Announce your presence",
+            "type": "Behavior",
+            "show": true
+        },
+        {
+            "id": "contact-supervisor-guidance",
+            "display_name": "Contact supervisor for guidance",
+            "type": "Behavior",
+            "show": true
+        },
+        {
+            "id": "stop",
+            "display_name": "Stop",
+            "type": "Behavior",
+            "show": true
+        },
+        {
+            "id": "return-to-charging-station",
+            "display_name": "Return to charging station",
+            "type": "Behavior",
+            "show": false
+        }
+    ]
+    
+}
