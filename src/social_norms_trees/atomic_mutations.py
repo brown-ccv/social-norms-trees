@@ -190,8 +190,10 @@ def exchange(
                 --> A
     """
 
-    node0_parent, node0_index = node0.parent, node0.parent.children.index(node0)
-    node1_parent, node1_index = node1.parent, node1.parent.children.index(node1)
+    node0_parent, node0_index = node0.parent, node0.parent.children.index(
+        node0)
+    node1_parent, node1_index = node1.parent, node1.parent.children.index(
+        node1)
 
     move(node0, (node1_parent, node1_index))
     move(node1, (node0_parent, node0_index))
@@ -653,7 +655,8 @@ def format_library_with_indices(library: List[py_trees.behaviour.Behaviour]):
 
 
 # Wrapper functions for the atomic operations which give them a UI.
-MutationResult = namedtuple("MutationResult", ["result", "tree", "function", "kwargs"])
+MutationResult = namedtuple(
+    "MutationResult", ["result", "tree", "function", "kwargs"])
 
 
 def mutate_chooser(*fs: Union[Callable], message="Which action?"):
@@ -720,12 +723,14 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         return node
     elif annotation_ == str(CompositeIndex):
         _logger.debug("in CompositeIndex")
-        composite_node = prompt_identify_composite(tree, message="Which parent?")
+        composite_node = prompt_identify_composite(
+            tree, message="Which parent?")
         index = prompt_identify_child_index(composite_node)
         return composite_node, index
     elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
-        new_node = prompt_identify_library_node(library, "Which node from the library?")
+        new_node = prompt_identify_library_node(
+            library, "Which node from the library?")
         return new_node
     else:
         _logger.debug("in 'else'")
@@ -790,7 +795,7 @@ def save_results(tree, protocol):
     print(f"tree:\n{py_trees.display.unicode_tree(tree)}")
 
 
-app = typer.app()
+app = typer.Typer()
 
 
 @app.command()
