@@ -39,6 +39,6 @@ pytest
 
 Run the example experiment:
 ```bash
-python src/social_norms_trees/ui_wrapper.py --resources-file example-experiments/entering-a-room.json --db-file example-experiments/entering-a-room.db.json
+social-norms-trees example-experiments/entering-a-room.json
 ```
 
