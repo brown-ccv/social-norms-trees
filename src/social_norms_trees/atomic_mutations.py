@@ -1,7 +1,6 @@
 from collections import namedtuple
 import inspect
 from functools import wraps
-from itertools import islice
 import logging
 import sys
 from types import GenericAlias
