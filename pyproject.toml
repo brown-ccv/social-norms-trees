@@ -121,3 +121,6 @@ version.source = "vcs"
 
 [tool.black]
 target-version = ['py311']
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
