@@ -1,5 +1,6 @@
 import pathlib
 import time
+from typing import Annotated
 import click
 from datetime import datetime
 import json
@@ -161,9 +162,14 @@ def run_experiment(db, origin_tree, experiment_id, behavior_library):
         return db
 
 
+app = typer.Typer()
+
+
+@app.command()
 def main(
-    db_file: pathlib.Path = "db.json",
-    resources_file: pathlib.Path = "resources.json",
+    resources_file: Annotated[pathlib.Path, typer.Argument(help="file with the experimental context, behavior tree, and behavior library")],
+    db_file: Annotated[pathlib.Path, typer.Option(
+        help="file where the experimental results will be written")] = "db.json",
 ):
     print("AIT Prototype #1 Simulator")
 
@@ -190,4 +196,4 @@ def main(
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    app()
