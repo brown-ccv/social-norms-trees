@@ -643,6 +643,7 @@ def mutate_ui(
         return_value = MutationResult(
             result=inner_result, tree=tree, function=f, kwargs=kwargs
         )
+        _logger.debug(return_value)
         return return_value
 
     return f_inner
@@ -686,7 +687,7 @@ class QuitException(Exception):
     pass
 
 
-def end_experiment(*args, **kwargs):
+def end_experiment():
     """I'm done, end the experiment."""
     raise QuitException("User ended the experiment.")
 
