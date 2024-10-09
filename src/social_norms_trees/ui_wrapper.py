@@ -111,12 +111,10 @@ def display_tree(tree):
     return
 
 
-def run_experiment(origin_tree, behavior_library):
+def run_experiment(tree, library):
     # Loop for the actual experiment part, which takes user input to decide which action to take
     print("\nExperiment beginning...\n")
 
-    tree = origin_tree
-    library = behavior_library
     results_dict = {
         "action_log": []
     }
