@@ -121,9 +121,9 @@ def deserialize_tree(tree, behavior_library):
 
             if behavior:
                 return CustomSequence(
-                    name=behavior["display_name"],
+                    name=behavior["name"],
                     id_=behavior["id"],
-                    display_name=behavior["display_name"],
+                    display_name=behavior["name"],
                     children=children,
                 )
             else:
@@ -142,9 +142,9 @@ def deserialize_tree(tree, behavior_library):
 
             if behavior:
                 return CustomBehavior(
-                    name=behavior["display_name"],
+                    name=behavior["name"],
                     id_=behavior["id"],
-                    display_name=behavior["display_name"],
+                    display_name=behavior["name"],
                 )
             else:
                 raise ValueError(
