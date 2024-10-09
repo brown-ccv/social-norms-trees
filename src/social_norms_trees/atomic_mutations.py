@@ -44,7 +44,8 @@ def remove(node: ExistingNode) -> ExistingNode:
         >>> tree = py_trees.composites.Sequence("", False, children=[
         ...    py_trees.behaviours.Success(),
         ...    failure := py_trees.behaviours.Failure()])
-        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+        >>> print(py_trees.display.ascii_tree(tree))
+        ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
@@ -73,15 +74,18 @@ def insert(node: NewNode, where: CompositeIndex) -> None:
         >>> tree = py_trees.composites.Sequence("", False, children=[
         ...    py_trees.behaviours.Success()
         ... ])
-        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+        >>> print(py_trees.display.ascii_tree(tree))
+        ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
+
         >>> insert(py_trees.behaviours.Failure(), (tree, 1))
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
+
         >>> insert(py_trees.behaviours.Dummy(), (tree, 0))
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
@@ -105,10 +109,13 @@ def move(
         ...     failure_node := py_trees.behaviours.Failure(),
         ...     success_node := py_trees.behaviours.Success(),
         ... ])
-        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+
+        >>> print(py_trees.display.ascii_tree(tree))
+        ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Failure
             --> Success
+
         >>> move(failure_node, (tree, 1))
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
@@ -116,6 +123,7 @@ def move(
             --> Success
             --> Failure
             >>> move(failure_node, (tree, 1))
+
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
@@ -137,16 +145,20 @@ def exchange(
         ...     s := py_trees.behaviours.Success(),
         ...     f := py_trees.behaviours.Failure(),
         ... ])
-        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+
+        >>> print(py_trees.display.ascii_tree(tree))
+        ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Success
             --> Failure
+
         >>> exchange(s, f)
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             --> Failure
             --> Success
+
         >>> tree = py_trees.composites.Sequence("", False, children=[
         ...     a:= py_trees.composites.Sequence("A", False, children=[
         ...         py_trees.behaviours.Dummy()
@@ -156,13 +168,16 @@ def exchange(
         ...         c := py_trees.composites.Sequence("C", False, children=[])
         ...     ])
         ... ])
-        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+
+        >>> print(py_trees.display.ascii_tree(tree)) 
+        ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             [-] A
                 --> Dummy
             [-] B
                 --> Success
                 [-] C
+
         >>> exchange(a, c)
         >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
@@ -172,6 +187,7 @@ def exchange(
                 --> Success
                 [-] A
                     --> Dummy
+
         >>> tree = py_trees.composites.Sequence("", False, children=[
         ...     py_trees.composites.Sequence("1", False, children=[
         ...         a := py_trees.behaviours.Dummy("A")
@@ -180,14 +196,18 @@ def exchange(
         ...         b := py_trees.behaviours.Dummy("B")
         ...     ])
         ... ])
-        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+
+        >>> print(py_trees.display.ascii_tree(tree))
+        ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             [-] 1
                 --> A
             [-] 2
                 --> B
+
         >>> exchange(a, b)
-        >>> print(py_trees.display.ascii_tree(tree))  # doctest: +NORMALIZE_WHITESPACE
+        >>> print(py_trees.display.ascii_tree(tree))
+        ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             [-] 1
                 --> B
@@ -214,7 +234,8 @@ def exchange(
 def iterate_nodes(tree: py_trees.behaviour.Behaviour):
     """
     Examples:
-        >>> list(iterate_nodes(py_trees.behaviours.Dummy()))  # doctest: +ELLIPSIS
+        >>> list(iterate_nodes(py_trees.behaviours.Dummy()))
+        ... # doctest: +ELLIPSIS
         [<py_trees.behaviours.Dummy object at 0x...>]
         >>> list(iterate_nodes(
         ...     py_trees.composites.Sequence("", False, children=[
@@ -244,7 +265,9 @@ def iterate_nodes(tree: py_trees.behaviour.Behaviour):
 def enumerate_nodes(tree: py_trees.behaviour.Behaviour):
     """
     Examples:
-        >>> list(enumerate_nodes(py_trees.behaviours.Dummy()))  # doctest: +ELLIPSIS
+
+        >>> list(enumerate_nodes(py_trees.behaviours.Dummy()))
+        ... # doctest: +ELLIPSIS
         [(0, <py_trees.behaviours.Dummy object at 0x...>)]
         >>> list(enumerate_nodes(
         ...     py_trees.composites.Sequence("", False, children=[
