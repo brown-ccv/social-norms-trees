@@ -4,7 +4,7 @@ from functools import wraps
 import logging
 import sys
 from types import GenericAlias
-from typing import Callable, List, Tuple, TypeVar, Union, Dict
+from typing import Callable, List, Mapping, NamedTuple, Tuple, TypeVar, Union, Dict
 
 import click
 import py_trees
@@ -21,6 +21,12 @@ NewNode = TypeVar("NewNode", bound=py_trees.behaviour.Behaviour)
 CompositeIndex = TypeVar(
     "CompositeIndex", bound=Tuple[py_trees.composites.Composite, int]
 )
+BehaviorIdentifier = TypeVar(
+    "BehaviorIdentifier", bound=Union[ExistingNode, NewNode, CompositeIndex])
+BehaviorTreeNode = TypeVar(
+    "BehaviorTreeNode", bound=py_trees.behaviour.Behaviour)
+BehaviorTree = TypeVar("BehaviorTree", bound=BehaviorTreeNode)
+BehaviorLibrary = TypeVar("BehaviorLibrary", bound=List[BehaviorTreeNode])
 
 # =============================================================================
 # Atomic operations
