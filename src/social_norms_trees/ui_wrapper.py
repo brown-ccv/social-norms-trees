@@ -20,7 +20,6 @@ from social_norms_trees.atomic_mutations import (
     mutate_chooser,
     remove,
     end_experiment,
-    MutationResult,
 )
 from social_norms_trees.serialize_tree import serialize_tree, deserialize_tree
 
@@ -149,15 +148,15 @@ def run_experiment(tree, library):
     except QuitException:
         pass
 
-    except Exception:
-        print(
-            "\nAn error has occured during the experiment, the experiment will now end."
-        )
-        results_dict["error_log"] = traceback.format_exc()
+    # except Exception:
+    #     print(
+    #         "\nAn error has occured during the experiment, the experiment will now end."
+    #     )
+    #     results_dict["error_log"] = traceback.format_exc()
 
-    finally:
-        results_dict["final_behavior_tree"] = serialize_tree(tree)
-        results_dict["start_time"] = datetime.now().isoformat()
+    # finally:
+    results_dict["final_behavior_tree"] = serialize_tree(tree)
+    results_dict["start_time"] = datetime.now().isoformat()
 
     return results_dict
 
