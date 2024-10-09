@@ -21,8 +21,6 @@ from social_norms_trees.serialize_tree import serialize_tree, deserialize_tree
 
 from social_norms_trees.behavior_library import BehaviorLibrary
 
-DB_FILE = "db.json"
-
 
 def load_db(db_file):
     if os.path.exists(db_file):
