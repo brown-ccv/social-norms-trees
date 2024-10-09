@@ -2,7 +2,7 @@ import py_trees
 from social_norms_trees.custom_node_library import CustomBehavior, CustomSequence
 
 
-def serialize_tree(tree):
+def serialize_tree(tree, include_children=True):
     """
     Examples:
         >>> from py_trees.behaviours import Dummy, Success, Failure
@@ -35,7 +35,7 @@ def serialize_tree(tree):
         data["display_name"] = tree.display_name
     if hasattr(tree, "id_"):
         data["id_"] = tree.id_
-    if tree.children:
+    if include_children and tree.children:
         data["children"] = [serialize_tree(child) for child in tree.children]
 
     return data
