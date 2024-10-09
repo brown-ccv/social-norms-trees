@@ -2,7 +2,6 @@ from collections import namedtuple
 import inspect
 from functools import partial, wraps
 import logging
-import sys
 from types import GenericAlias
 from typing import Callable, List, Mapping, NamedTuple, Tuple, TypeVar, Union, Dict
 
