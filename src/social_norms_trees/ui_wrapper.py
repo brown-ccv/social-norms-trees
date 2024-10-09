@@ -20,7 +20,7 @@ from social_norms_trees.atomic_mutations import (
     remove,
     end_experiment,
 )
-from social_norms_trees.serialize_tree import serialize_tree, deserialize_tree
+from social_norms_trees.serialize_tree import deserialize_library_element, serialize_tree, deserialize_tree
 
 from social_norms_trees.behavior_library import BehaviorLibrary
 
@@ -40,8 +40,10 @@ def save_db(db, db_file):
 
     print(f"\nWriting results of simulation to {db_file}...")
 
+    json_representation = json.dumps(db, indent=4)
+
     with open(db_file, "w") as f:
-        json.dump(db, f, indent=4)
+        f.write(json_representation)
 
 
 def experiment_setup(db, origin_tree):
@@ -78,9 +80,10 @@ def load_resources(file_path):
     behavior_list = resources.get("behavior_library")
     context_paragraph = resources.get("context")
 
-    behavior_library = BehaviorLibrary(behavior_list)
+    behavior_tree = deserialize_tree(
+        behavior_tree, BehaviorLibrary(behavior_list))
 
-    behavior_tree = deserialize_tree(behavior_tree, behavior_library)
+    behavior_library = [deserialize_library_element(e) for e in behavior_list]
 
     print("Loading success.")
     return behavior_tree, behavior_library, context_paragraph
@@ -109,16 +112,23 @@ def display_tree(tree):
     return
 
 
-def serialize_function_arguments(kwargs_):
+def serialize_function_arguments(args):
     results = {}
-    for key, value in kwargs_.items():
-        if isinstance(value, dict):
+    if isinstance(args, dict):
+        for key, value in args.items():
             results[key] = serialize_function_arguments(value)
-        elif isinstance(value, py_trees.behaviour.Behaviour):
-            results[key] = serialize_tree(value)
-        else:
-            results[key] = value
-    return results
+        return results
+    elif isinstance(args, py_trees.behaviour.Behaviour):
+        value = serialize_tree(args, include_children=False)
+        return value
+    elif isinstance(args, tuple):
+        value = tuple(serialize_function_arguments(i) for i in args)
+        return value
+    elif isinstance(args, list):
+        value = [serialize_function_arguments(i) for i in args]
+        return value
+    else:
+        return args
 
 
 def run_experiment(tree, library):
@@ -147,11 +157,11 @@ def run_experiment(tree, library):
     except QuitException:
         pass
 
-    # except Exception:
-    #     print(
-    #         "\nAn error has occured during the experiment, the experiment will now end."
-    #     )
-    #     results_dict["error_log"] = traceback.format_exc()
+    except Exception:
+        print(
+            "\nAn error has occured during the experiment, the experiment will now end."
+        )
+        results_dict["error_log"] = traceback.format_exc()
 
     # finally:
     results_dict["final_behavior_tree"] = serialize_tree(tree)
