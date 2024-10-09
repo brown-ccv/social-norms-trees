@@ -568,7 +568,7 @@ prompt_identify_child_index = partial(
 def get_position_mapping(tree):
     """
     Better Options:
-        Option 0:
+        Option 0: Numbers close to place is better
           [-] S0
         0: ----->
               [-] S1
@@ -581,32 +581,8 @@ def get_position_mapping(tree):
                 --> Failure
         5: ------->
         6: ----->
-        Option 1:
-          [-] S0
-        0: ----->
-              [-] S1
-        0.0: ------->
-                --> Dummy
-        0.1: ------->
-        1: ----->
-              [-] S2
-        1.0: ------->
-                --> Failure
-        1.1: ------->
-        2: ----->
-        Option 2:
-        [-] S0
-            --> {0}
-            [-] S1
-              --> {0.0}
-              --> Dummy
-              --> {0.1}
-            --> {1}
-            [-] S2
-              --> {1.0}
-              --> Failure
-              --> {1.1}
-            --> {2}
+
+
         Option 3:
         [-] S0
             --> {1}
@@ -620,6 +596,7 @@ def get_position_mapping(tree):
               --> Failure
               --> {6}
             --> {7}
+
         Option 4:
         [-] S0
             --> {⚡️ 1}
@@ -633,23 +610,9 @@ def get_position_mapping(tree):
                 --> Failure
                 --> {⚡️ 6}
             --> {⚡️ 7}
-        Option 5:
-        Where: [before/after]
-        Which: [user types display name]
-        Option 6:
-        [-] S0
-            {⚡️ 1} <--
-            [-] S1
-                    {⚡️ 2} <--
-                --> Dummy
-                    {⚡️ 3} <--
-                {⚡️ 4} <--
-            [-] S2
-                    {⚡️ 5} <--
-                --> Failure
-                    {⚡️ 6} <--
-                {⚡️ 7} <--
-        Option 7:
+
+
+        Option 7: But the arrows point to the wrong places – the places the user doesn't need to look at right now
         [-] S0
             {⚡️ 1}
             [-] S1
@@ -662,20 +625,99 @@ def get_position_mapping(tree):
                 --> Failure
                     {⚡️ 6}
                 {⚡️ 7}
-        Option 8:
+
+
+            "Choose a numbered position"
+
+        Option 11:
         [-] S0
-            --> _1
+            {⭐️ 1}
             [-] S1
-                --> _2
+                    {⭐️ 2}
                 --> Dummy
-                --> _3
-            --> _4
+                    {⭐️ 3}
+                {⭐️ 4}
             [-] S2
-                --> _5
+                    {⭐️ 5}
                 --> Failure
-                --> _6
-            --> _7
-        Option 9:
+                    {⭐️ 6}
+                {⭐️ 7}
+
+        Option 12: highlight the options in *gray* or make everything else gray and leave what they can choose as black
+        [-] S0
+            *Position 1*
+            [-] S1
+                    *Position 2*
+                --> Dummy
+                    *Position 3*
+                *Position 4*
+            [-] S2
+                    *Position 5*
+                --> Failure
+                    *Position 6*
+                *Position 7*
+
+                Option 12: highlight the options in *gray* or make everything else gray and leave what they can choose as black
+        [-] S0
+            *1*
+            [-] S1
+                    *2*
+                --> Dummy
+                    *3*
+                *4*
+            [-] S2
+                    *5*
+                --> Failure
+                    *6*
+                *7*
+
+    Option 13: make everything else gray and leave what they can choose as black
+        [-] S0
+            --> {1}
+            [-] S1
+              --> {2}
+              --> Dummy
+              --> {3}
+            --> {4}
+            [-] S2
+              --> {5}
+              --> Failure
+              --> {6}
+            --> {7}
+
+
+
+    Rejected options
+
+    Option 1: Excluded – Whole numbers is easier than decimals
+          [-] S0
+        0: ----->
+              [-] S1
+        0.0: ------->
+                --> Dummy
+        0.1: ------->
+        1: ----->
+              [-] S2
+        1.0: ------->
+                --> Failure
+        1.1: ------->
+        2: ----->
+
+        Option 2: Excluded – Whole numbers is easier than decimals
+        [-] S0
+            --> {0}
+            [-] S1
+              --> {0.0}
+              --> Dummy
+              --> {0.1}
+            --> {1}
+            [-] S2
+              --> {1.0}
+              --> Failure
+              --> {1.1}
+            --> {2}
+
+    Option 9: Looks like line numbers – numbers near the place
         [-] S0
     1:       --> _
             [-] S1
@@ -688,7 +730,9 @@ def get_position_mapping(tree):
                 --> Failure
     6:          --> _
     7:      --> _
-        Option 10:
+
+
+    Option 10: Looks like line numbers
         [-] S0
     1:      --> ______
             [-] S1
@@ -701,8 +745,9 @@ def get_position_mapping(tree):
                 --> Failure
     6:          --> ______
     7:      --> ______
+
     Option 11: Preview
-    Chose a "Success" node:
+    Chose a "Success" node: Looks like line numbers:
         [-] S0
     1:      --> *Success*
             [-] S1
@@ -715,6 +760,46 @@ def get_position_mapping(tree):
                 --> Failure
     6:          --> *Success*
     7:      --> *Success*
+
+    Option 8: Too many lines and dashes
+        [-] S0
+            --> _1
+            [-] S1
+                --> _2
+                --> Dummy
+                --> _3
+            --> _4
+            [-] S2
+                --> _5
+                --> Failure
+                --> _6
+            --> _7
+
+    Option 6: too many dashes, arrows going everywhere
+        [-] S0
+            {⚡️ 1} <--
+            [-] S1
+                    {⚡️ 2} <--
+                --> Dummy
+                    {⚡️ 3} <--
+                {⚡️ 4} <--
+            [-] S2
+                    {⚡️ 5} <--
+                --> Failure
+                    {⚡️ 6} <--
+                {⚡️ 7} <--
+
+
+    Option 5: Might be tricky with typos, caps, might feel more complicated.
+        Where: [before/after]
+        Which: [user types display name]
+        [-] S0
+            [-] S1
+                --> Dummy
+            [-] S2
+                --> Failure
+        Legal options: "Before S1", "Before Dummy", "After Dummy", "Before Failure"
+
     """
     pass
 
@@ -784,9 +869,8 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
     assert isinstance(annotation_, str)
 
     if annotation_ == str(inspect.Parameter.empty):
-        _logger.debug("in empty")
-        msg = "Can't work out what argument %s should be" % annotation
-        raise ValueError(msg)
+        _logger.debug("No argument annotation, returning None")
+        return None
     elif annotation_ == str(ExistingNode):
         _logger.debug("in ExistingNode")
         node = prompt_identify_node(tree)
@@ -817,7 +901,7 @@ class QuitException(Exception):
     pass
 
 
-def end_experiment():
+def end_experiment(*args, **kwargs):
     """I'm done, end the experiment."""
     raise QuitException("User ended the experiment.")
 
