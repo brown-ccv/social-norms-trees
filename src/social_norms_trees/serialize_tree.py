@@ -41,6 +41,59 @@ def serialize_tree(tree, include_children=True):
     return data
 
 
+def deserialize_library_element(description: dict):
+    """
+    Examples:
+        >>> deserialize_library_element({"type": "Sequence"})
+
+    """
+    assert isinstance(description["type"], str), (
+        f"\nThere was an invalid configuration detected in the inputted behavior tree: "
+        f"Invalid type for node attribute 'type' found for node '{description['name']}'. "
+        f"Please ensure that the 'name' attribute is a string."
+    )
+
+    node_type = description["type"]
+    assert node_type in {"Sequence", "Selector", "Behavior"}, (
+        f"\nThere was an invalid configuration detected in the inputted behavior tree: "
+        f"Invalid node type '{node_type}' found for node '{description['name']}'. "
+        f"Please ensure that all node types are correct and supported."
+    )
+
+    if node_type == "Sequence":
+        if "children" in description.keys():
+            children = [deserialize_library_element(
+                child) for child in description["children"]]
+        else:
+            children = []
+
+        node = CustomSequence(
+            name=description["name"],
+            id_=description["id"],
+            display_name=description["name"],
+            children=children,
+        )
+
+    elif node_type == "Behavior":
+        assert "children" not in description or len(description["children"]) == 0, (
+            f"\nThere was an invalid configuration detected in the inputted behavior tree: "
+            f"Children were detected for Behavior type node '{description['name']}': "
+            f"Behavior nodes should not have any children. Please check the structure of your behavior tree."
+        )
+
+        node = CustomBehavior(
+            name=description["name"],
+            id_=description["id"],
+            display_name=description["name"],
+        )
+
+    else:
+        msg = "node_type=%s is not implemented" % node_type
+        raise NotImplementedError(msg)
+
+    return node
+
+
 def deserialize_tree(tree, behavior_library):
     def deserialize_node(node):
         assert type(node["type"] == str), (
