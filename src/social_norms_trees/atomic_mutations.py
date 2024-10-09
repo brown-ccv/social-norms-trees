@@ -874,41 +874,14 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
     tree, library = load_experiment()
     protocol = []
-    exit_code = None
 
-    try:
+    # The main loop of the experiment
+    while f := mutate_chooser(insert, move, exchange, remove, quit):
+        # try:
+        results = f(tree, library)
+        _logger.debug(results)
+        protocol.append(results)
         print(py_trees.display.ascii_tree(tree))
-
-        # The main loop of the experiment
-        while f := mutate_chooser(insert, move, exchange, remove, quit):
-            # try:
-            results = f(tree, library)
-            _logger.debug(results)
-            protocol.append(results)
-            print(py_trees.display.ascii_tree(tree))
-
-            # If we have any errors raised by the function, like wrong values,
-            # we don't want to crash.
-            # except (ValueError, IndexError, NotImplementedError) as e:
-            #     _logger.error(f"\n{e}")
-            #     continue
-
-    # If the user calls the "quit" function, then we want to exit
-    except QuitException as e:
-        _logger.debug(e)
-        exit_code = 0
-
-    # If the user does a keyboard interrupt, then we want to exit
-    except click.exceptions.Abort:
-        print("\n")
-        _logger.error("Program aborted.")
-        exit_code = 1
-
-    # Save the results
-    finally:
-        _logger.debug("finally")
-        save_results(tree, protocol)
-        sys.exit(exit_code)
 
 
 if __name__ == "__main__":
