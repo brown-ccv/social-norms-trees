@@ -621,8 +621,8 @@ def mutate_chooser(*fs: Union[Callable], message="Which action?"):
 
 
 def mutate_ui(
-    f,
-) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behaviour.Behaviour]], Dict]:
+    f: Callable,
+) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behaviour.Behaviour]], MutationResult]:
     """Factory function for a tree mutator UI.
     This creates a version of the atomic function `f`
     which prompts the user for the appropriate arguments
