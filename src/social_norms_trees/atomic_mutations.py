@@ -323,13 +323,24 @@ def label_tree_lines(
         AAA: [-] S1
          BB:     --> Dummy
           C:     --> Dummy
+
+        If there are more labels than lines, then those are shown too:
+        >>> print(label_tree_lines(tree, labels=["AAA", "BB", "C", "O"]))
+        AAA: [-] S1
+         BB:     --> Dummy
+          C:     --> Dummy
+          O:
     """
     max_len = max([len(s) for s in labels])
     padded_labels = [s.rjust(max_len) for s in labels]
 
     tree_representation_lines = representation(tree).split("\n")
+
     enumerated_tree_representation_lines = [
-        f"{i}: {t}" for i, t in zip(padded_labels, tree_representation_lines)
+        f"{i}: {t}".rstrip()  # Make the line. If `t` is missing,
+                              # then we don't want a trailing space
+                              # so we strip that away
+        for i, t in zip(padded_labels, tree_representation_lines)
     ]
 
     output = "\n".join(enumerated_tree_representation_lines)
