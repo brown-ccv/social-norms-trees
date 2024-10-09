@@ -21,6 +21,8 @@ from social_norms_trees.serialize_tree import serialize_tree, deserialize_tree
 
 from social_norms_trees.behavior_library import BehaviorLibrary
 
+_logger = logging.getLogger(__name__)
+
 
 def load_db(db_file):
     if os.path.exists(db_file):
