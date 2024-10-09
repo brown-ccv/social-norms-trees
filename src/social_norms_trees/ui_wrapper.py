@@ -111,16 +111,27 @@ def display_tree(tree):
     return
 
 
+def serialize_function_arguments(kwargs_):
+    results = {}
+    for key, value in kwargs_.items():
+        if isinstance(value, dict):
+            results[key] = serialize_function_arguments(value)
+        elif isinstance(value, py_trees.behaviour.Behaviour):
+            results[key] = serialize_tree(value)
+        else:
+            results[key] = value
+    return results
+
+
 def run_experiment(tree, library):
     # Loop for the actual experiment part, which takes user input to decide which action to take
     print("\nExperiment beginning...\n")
 
     results_dict = {
+        "start_time": datetime.now().isoformat(),
+        "initial_behavior_tree": serialize_tree(tree),
         "action_log": []
     }
-
-    results_dict["initial_behavior_tree"] = serialize_tree(tree)
-    results_dict["start_time"] = datetime.now().isoformat()
 
     try:
         while True:
@@ -131,6 +142,7 @@ def run_experiment(tree, library):
             results = f(tree, library)
             results_dict["action_log"].append({
                 "type": results.function.__name__,
+                "kwargs": serialize_function_arguments(results.kwargs),
                 "time": datetime.now().isoformat(),
             })
 
