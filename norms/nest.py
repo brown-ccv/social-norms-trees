@@ -142,7 +142,9 @@ def create_root() -> py_trees.behaviour.Behaviour:
         eventually=py_trees.common.Status.SUCCESS,
     )
     always_running2 = py_trees.behaviours.Running(name="Running")
-    new_root = py_trees.composites.Selector(name="Selector", memory=False).add_children([root, root2, root3])
+    new_root = py_trees.composites.Selector(name="Selector", memory=False).add_children(
+        [root, root2, root3]
+    )
     # new_root.add_children([ffs, always_running])
     root.add_children([ffs])
     root2.add_children([ffs2])

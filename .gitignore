@@ -12,3 +12,6 @@ __pycache__/
 .tox
 .cache
 .venv/
+
+# Project specific files
+db.json

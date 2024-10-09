@@ -75,7 +75,9 @@ classifiers = [  # Optional
 
 dependencies = [ # Optional
   "py_trees",
-  "websockets"
+  "websockets",
+  "click",
+  "typer",
 ]
 
 # List additional groups of dependencies here (e.g. development
@@ -110,7 +112,7 @@ test = [
 "Source" = "https://github.com/pypa/sampleproject/"
 
 [project.scripts]  # Optional
-sample = "sample:main"
+social-norms-trees = "social_norms_trees.ui_wrapper:app"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -121,3 +123,7 @@ version.source = "vcs"
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
+
+[tool.black]
+target-version = ['py311']
+
