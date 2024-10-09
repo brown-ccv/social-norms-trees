@@ -817,9 +817,9 @@ class QuitException(Exception):
     pass
 
 
-def quit():
-    """Finish the experiment."""
-    raise QuitException("User quit the experiment.")
+def end_experiment():
+    """I'm done, end the experiment."""
+    raise QuitException("User ended the experiment.")
 
 
 # =============================================================================
@@ -875,8 +875,7 @@ def main():
     protocol = []
 
     # The main loop of the experiment
-    while f := mutate_chooser(insert, move, exchange, remove, quit):
-        # try:
+    while f := mutate_chooser(insert, move, exchange, remove, end_experiment):
         results = f(tree, library)
         _logger.debug(results)
         protocol.append(results)
