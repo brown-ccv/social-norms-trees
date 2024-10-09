@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import time
 from typing import Annotated
@@ -172,9 +173,21 @@ def main(
     ],
     db_file: Annotated[
         pathlib.Path,
-        typer.Option(help="file where the experimental results will be written"),
+        typer.Option(
+            help="file where the experimental results will be written"),
     ] = "db.json",
+    verbose: Annotated[bool, typer.Option("--verbose")] = False,
+    debug: Annotated[bool, typer.Option("--debug")] = False,
 ):
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+        _logger.debug("debug logging")
+    elif verbose:
+        logging.basicConfig(level=logging.INFO)
+        _logger.debug("verbose logging")
+    else:
+        logging.basicConfig()
+
     print("AIT Prototype #1 Simulator")
 
     # TODO: write up some context, assumptions made in the README
