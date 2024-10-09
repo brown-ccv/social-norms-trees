@@ -117,9 +117,9 @@ def run_experiment(origin_tree, behavior_library):
 
     tree = origin_tree
     library = behavior_library
-    protocol: List[MutationResult] = []
-    action_log = []
-    results_dict = {}
+    results_dict = {
+        "action_log": []
+    }
 
     results_dict["initial_behavior_tree"] = serialize_tree(tree)
     results_dict["start_time"] = datetime.now().isoformat()
@@ -131,9 +131,7 @@ def run_experiment(origin_tree, behavior_library):
             if f is end_experiment:
                 break
             results = f(tree, library)
-            _logger.debug(results)
-            protocol.append(results)
-            action_log.append({
+            results_dict["action_log"].append({
                 "type": results.function.__name__,
                 "time": datetime.now().isoformat(),
             })
@@ -150,7 +148,6 @@ def run_experiment(origin_tree, behavior_library):
     finally:
         results_dict["final_behavior_tree"] = serialize_tree(tree)
         results_dict["start_time"] = datetime.now().isoformat()
-        results_dict["action_log"] = action_log
 
     return results_dict
 
