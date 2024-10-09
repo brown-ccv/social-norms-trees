@@ -3,15 +3,42 @@ from social_norms_trees.custom_node_library import CustomBehavior, CustomSequenc
 
 
 def serialize_tree(tree):
-    def serialize_node(node):
-        data = {
-            "type": node.__class__.__name__,
-            "name": node.name,
-            "children": [serialize_node(child) for child in node.children],
-        }
-        return data
+    """
+    Examples:
+        >>> from py_trees.behaviours import Dummy, Success, Failure
+        >>> from py_trees.composites import Sequence, Selector
 
-    return serialize_node(tree)
+        >>> serialize_tree(Dummy())
+        {'type': 'Dummy', 'name': 'Dummy'}
+
+        >>> serialize_tree(Success())
+        {'type': 'Success', 'name': 'Success'}
+
+        >>> serialize_tree(Failure())
+        {'type': 'Failure', 'name': 'Failure'}
+
+        >>> serialize_tree(Sequence("root", True, children=[Dummy()]))
+        {'type': 'Sequence', 'name': 'root', 'children': [{'type': 'Dummy', 'name': 'Dummy'}]}
+
+        >>> serialize_tree(CustomBehavior("behavior", "theid", "display behavior"))
+        {'type': 'CustomBehavior', 'name': 'behavior', 'display_name': 'display behavior', 'id_': 'theid'}
+
+        >>> serialize_tree(CustomSequence("root", "theid", "display root", children=[Dummy()]))
+        {'type': 'CustomSequence', 'name': 'root', 'display_name': 'display root', 'id_': 'theid', 'children': [{'type': 'Dummy', 'name': 'Dummy'}]}
+    """
+
+    data = {
+        "type": tree.__class__.__name__,
+        "name": tree.name,
+    }
+    if hasattr(tree, "display_name"):
+        data["display_name"] = tree.display_name
+    if hasattr(tree, "id_"):
+        data["id_"] = tree.id_
+    if tree.children:
+        data["children"] = [serialize_tree(child) for child in tree.children]
+
+    return data
 
 
 def deserialize_tree(tree, behavior_library):
