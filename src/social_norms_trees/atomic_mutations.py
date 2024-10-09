@@ -22,9 +22,9 @@ CompositeIndex = TypeVar(
     "CompositeIndex", bound=Tuple[py_trees.composites.Composite, int]
 )
 BehaviorIdentifier = TypeVar(
-    "BehaviorIdentifier", bound=Union[ExistingNode, NewNode, CompositeIndex])
-BehaviorTreeNode = TypeVar(
-    "BehaviorTreeNode", bound=py_trees.behaviour.Behaviour)
+    "BehaviorIdentifier", bound=Union[ExistingNode, NewNode, CompositeIndex]
+)
+BehaviorTreeNode = TypeVar("BehaviorTreeNode", bound=py_trees.behaviour.Behaviour)
 BehaviorTree = TypeVar("BehaviorTree", bound=BehaviorTreeNode)
 BehaviorLibrary = TypeVar("BehaviorLibrary", bound=List[BehaviorTreeNode])
 
@@ -169,7 +169,7 @@ def exchange(
         ...     ])
         ... ])
 
-        >>> print(py_trees.display.ascii_tree(tree)) 
+        >>> print(py_trees.display.ascii_tree(tree))
         ... # doctest: +NORMALIZE_WHITESPACE
         [-]
             [-] A
@@ -215,10 +215,10 @@ def exchange(
                 --> A
     """
 
-    node0_parent, node0_index = node0.parent, node0.parent.children.index(
-        node0)
-    node1_parent, node1_index = node1.parent, node1.parent.children.index(
-        node1)
+    node0_parent = node0.parent
+    node0_index = node0.parent.children.index(node0)
+    node1_parent = node1.parent
+    node1_index = node1.parent.children.index(node1)
 
     move(node0, (node1_parent, node1_index))
     move(node1, (node0_parent, node0_index))
@@ -337,9 +337,11 @@ def label_tree_lines(
     tree_representation_lines = representation(tree).split("\n")
 
     enumerated_tree_representation_lines = [
-        f"{i}: {t}".rstrip()  # Make the line. If `t` is missing,
-                              # then we don't want a trailing space
-                              # so we strip that away
+        # Make the line. If `t` is missing,
+        # then we don't want a trailing space
+        # so we strip that away
+        f"{i}: {t}".rstrip()
+
         for i, t in zip(padded_labels, tree_representation_lines)
     ]
 
