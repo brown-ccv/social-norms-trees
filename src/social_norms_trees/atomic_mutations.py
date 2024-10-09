@@ -24,9 +24,13 @@ CompositeIndex = TypeVar(
 BehaviorIdentifier = TypeVar(
     "BehaviorIdentifier", bound=Union[ExistingNode, NewNode, CompositeIndex]
 )
-BehaviorTreeNode = TypeVar("BehaviorTreeNode", bound=py_trees.behaviour.Behaviour)
+BehaviorTreeNode = TypeVar(
+    "BehaviorTreeNode", bound=py_trees.behaviour.Behaviour)
 BehaviorTree = TypeVar("BehaviorTree", bound=BehaviorTreeNode)
 BehaviorLibrary = TypeVar("BehaviorLibrary", bound=List[BehaviorTreeNode])
+TreeOrLibrary = TypeVar(
+    "TreeOrLibrary", bound=Union[BehaviorTree, BehaviorLibrary])
+
 
 # =============================================================================
 # Atomic operations
@@ -341,7 +345,6 @@ def label_tree_lines(
         # then we don't want a trailing space
         # so we strip that away
         f"{i}: {t}".rstrip()
-
         for i, t in zip(padded_labels, tree_representation_lines)
     ]
 
@@ -355,45 +358,215 @@ def label_tree_lines(
 # a separate function which does the prompting.
 # This should help testing.
 
+# Edge cases: what happens if the name of a node is really long - does the ascii representation wrap around?
 
-def prompt_identify_node(
-    tree: py_trees.behaviour.Behaviour,
-    message: str = "Which node?",
+
+class NodeMappingRepresentation(NamedTuple):
+    mapping: Dict[str, py_trees.behaviour.Behaviour]
+    labels: List[str]
+    representation: str
+
+
+def prompt_identify(
+    tree: TreeOrLibrary,
+    function: Callable[
+        [TreeOrLibrary], Tuple[Mapping[str, BehaviorIdentifier], List[str], str]
+    ],
+    message: str = "Which?",
     display_nodes: bool = True,
-) -> py_trees.behaviour.Behaviour:
+) -> BehaviorIdentifier:
 
-    key_node_mapping = {str(i): n for i, n in enumerate_nodes(tree)}
-    labels = key_node_mapping.keys()
+    mapping, labels, representation = function(tree)
 
     if display_nodes:
-        text = f"{(label_tree_lines(tree=tree, labels=labels))}\n{message}"
+        text = f"{representation}\n{message}"
     else:
         text = f"{message}"
 
     key = click.prompt(text=text, type=click.Choice(labels))
-
-    node = key_node_mapping[key]
-
+    node = mapping[key]
     return node
 
 
-def prompt_identify_position(
-    tree: py_trees.behaviour.Behaviour,
-    message: str = "Which position?",
-    display_nodes: bool = True,
-) -> Tuple[py_trees.composites.Composite, int]:
+def get_node_mapping(tree: BehaviorTree) -> NodeMappingRepresentation:
     """
-    Example:
-        >>> s1 = py_trees.composites.Sequence("S1", False, children=[py_trees.behaviours.Dummy()])
-        >>> prompt_identify_position(s1)
-          [-] S1
-        0: -->
-              --> Dummy
-        1: -->
-        >>> s2 = py_trees.composites.Sequence("S2", False, children=[py_trees.behaviours.Failure()])
-        >>> tree = py_trees.composites.Sequence("S0", False, children=[s1, s2])
-        >>> prompt_identify_position(tree)
+    Examples:
+        >>> a = get_node_mapping(py_trees.behaviours.Dummy())
+        >>> a.mapping
+        {'0': <py_trees.behaviours.Dummy object at 0x...>}
+
+        >>> a.labels
+        ['0']
+
+        >>> print(a.representation)
+        0: --> Dummy
+
+        >>> b = get_node_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
+        >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
+        {'0': <py_trees.composites.Sequence object at 0x...>,
+         '1': <py_trees.behaviours.Dummy object at 0x...>}
+
+        >>> b.labels
+        ['0', '1']
+
+        >>> print(b.representation)
+        0: [-]
+        1:     --> Dummy
+
     """
+    mapping = {str(i): n for i, n in enumerate_nodes(tree)}
+    labels = list(mapping.keys())
+    representation = label_tree_lines(tree=tree, labels=labels)
+    return NodeMappingRepresentation(mapping, labels, representation)
+
+
+prompt_identify_node = partial(prompt_identify, function=get_node_mapping)
+
+
+def get_library_mapping(library: BehaviorLibrary) -> NodeMappingRepresentation:
+    """
+    Examples:
+        >>> from py_trees.behaviours import Success, Failure
+        >>> n = get_library_mapping([])
+        >>> n.mapping
+        {}
+
+        >>> n.labels
+        []
+
+        >>> print(n.representation)
+        <BLANKLINE>
+
+        >>> a = get_library_mapping([Success(), Failure()])
+        >>> a.mapping  # doctest: +NORMALIZE_WHITESPACE
+        {'0': <py_trees.behaviours.Success object at 0x...>,
+         '1': <py_trees.behaviours.Failure object at 0x...>}
+
+        >>> a.labels
+        ['0', '1']
+
+        >>> print(a.representation)
+        0: Success
+        1: Failure
+    """
+
+    mapping = {str(i): n for i, n in enumerate(library)}
+    labels = list(mapping.keys())
+    representation = "\n".join(
+        [f"{i}: {n.name}" for i, n in enumerate(library)])
+    return NodeMappingRepresentation(mapping, labels, representation)
+
+
+prompt_identify_library_node = partial(
+    prompt_identify,
+    function=get_library_mapping
+)
+
+
+def get_composite_mapping(tree: BehaviorTree, skip_label="_"):
+    """
+    Examples:
+        >>> a = get_composite_mapping(py_trees.behaviours.Dummy())
+        >>> a.mapping
+        {}
+
+        >>> a.labels
+        []
+
+        >>> print(a.representation)
+        _: --> Dummy
+
+        >>> b = get_composite_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
+        >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
+        {'0': <py_trees.composites.Sequence object at 0x...>}
+
+        >>> b.labels
+        ['0']
+
+        >>> print(b.representation)
+        0: [-]
+        _:     --> Dummy
+    """
+    mapping = {}
+    display_labels, allowed_labels = [], []
+
+    for i, node in enumerate_nodes(tree):
+        label = str(i)
+        if isinstance(node, py_trees.composites.Composite):
+            mapping[label] = node
+            display_labels.append(label)
+            allowed_labels.append(label)
+        else:
+            display_labels.append(skip_label)
+    representation = label_tree_lines(tree=tree, labels=display_labels)
+
+    return NodeMappingRepresentation(mapping, allowed_labels, representation)
+
+
+prompt_identify_composite = partial(
+    prompt_identify,
+    function=get_composite_mapping
+)
+
+
+def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
+    """
+    Examples:
+        >>> a = get_child_index_mapping(py_trees.behaviours.Dummy())
+        >>> a.mapping
+        {'0': 0}
+
+        >>> a.labels
+        ['0']
+
+        >>> print(a.representation)
+        _: --> Dummy
+        0:
+
+        >>> b = get_child_index_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
+        >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
+        {'0': 0, '1': 1}
+
+        >>> b.labels
+        ['0', '1']
+
+        >>> print(b.representation)
+        _: [-]
+        0:     --> Dummy
+        1:
+    """
+    mapping = {}
+    display_labels, allowed_labels = [], []
+
+    for node in iterate_nodes(tree):
+        if node in tree.children:
+            index = tree.children.index(node)
+            label = str(index)
+            mapping[label] = index
+            allowed_labels.append(label)
+            display_labels.append(label)
+        else:
+            display_labels.append(skip_label)
+
+    # Add the "after all the elements" label
+    post_list_index = len(tree.children)
+    post_list_label = str(post_list_index)
+    allowed_labels.append(post_list_label)
+    display_labels.append(post_list_label)
+    mapping[post_list_label] = post_list_index
+
+    representation = label_tree_lines(tree=tree, labels=display_labels)
+
+    return NodeMappingRepresentation(mapping, allowed_labels, representation)
+
+
+prompt_identify_child_index = partial(
+    prompt_identify,
+    function=get_child_index_mapping
+)
+
+
+def get_position_mapping(tree):
     """
     Better Options:
         Option 0:
@@ -544,150 +717,7 @@ def prompt_identify_position(
     6:          --> *Success*
     7:      --> *Success*
     """
-    key_node_mapping = {str(i): n for i, n in enumerate_nodes(tree)}
-    labels = []
-    for key, node in key_node_mapping.items():
-        if isinstance(node, py_trees.composites.Composite):
-            labels.append(key)
-        else:
-            labels.append("_")
-
-    if display_nodes:
-        text = f"{(label_tree_lines(tree=tree, labels=labels))}\n{message}"
-    else:
-        text = f"{message}"
-
-    key = click.prompt(text=text, type=click.Choice(labels))
-
-    node = key_node_mapping[key]
-
-    return node
-
-
-def prompt_identify_composite(
-    tree: py_trees.behaviour.Behaviour,
-    message: str = "Which composite node?",
-    display_nodes: bool = True,
-    skip_label: str = "_",
-) -> Tuple[py_trees.composites.Composite, int]:
-    """
-    Example:
-        >>> s1 = py_trees.composites.Sequence("S1", False, children=[py_trees.behaviours.Dummy()])
-        >>> prompt_identify_composite(s1)
-          [-] S1
-        0: -->
-              --> Dummy
-        1: -->
-        >>> s2 = py_trees.composites.Sequence("S2", False, children=[py_trees.behaviours.Failure()])
-        >>> tree = py_trees.composites.Sequence("S0", False, children=[s1, s2])
-        >>> prompt_identify_position(tree)
-    """
-    key_node_mapping = {str(i): n for i, n in enumerate_nodes(tree)}
-    labels = []
-    for key, node in key_node_mapping.items():
-        if isinstance(node, py_trees.composites.Composite):
-            labels.append(key)
-        else:
-            labels.append(skip_label)
-    if display_nodes:
-        text = f"{(label_tree_lines(tree=tree, labels=labels))}\n{message}"
-    else:
-        text = f"{message}"
-    allowed_labels = [l for l in labels if l != skip_label]
-    key = click.prompt(text=text, type=click.Choice(allowed_labels))
-    node = key_node_mapping[key]
-    return node
-
-
-def prompt_identify_child_index(
-    tree: py_trees.behaviour.Behaviour,
-    message: str = "Which position?",
-    display_nodes: bool = True,
-    skip_label: str = "_",
-) -> int:
-    labels = []
-    i = 0
-    for node in iterate_nodes(tree):
-        if node in tree.children:
-            labels.append(str(i))
-            i += 1
-        else:
-            labels.append(skip_label)
-    labels.append(str(i))
-
-    if display_nodes:
-        text = f"{(label_tree_lines(tree=tree, labels=labels))}\n{message}"
-    else:
-        text = f"{message}"
-    allowed_labels = [l for l in labels if l != skip_label]
-    key = click.prompt(text=text, type=click.Choice(allowed_labels))
-    node_index = int(key)
-
-    return node_index
-
-
-def format_children_with_indices(composite: py_trees.composites.Composite) -> str:
-    """
-    Examples:
-        >>> tree = py_trees.composites.Sequence("s1", False, children=[
-        ...         py_trees.behaviours.Dummy(),
-        ...         py_trees.behaviours.Success(),
-        ...         s2 := py_trees.composites.Sequence("s2", False, children=[
-        ...             py_trees.behaviours.Dummy(),
-        ...         ]),
-        ...         s3 := py_trees.composites.Sequence("", False, children=[
-        ...             py_trees.behaviours.Failure(),
-        ...             py_trees.behaviours.Periodic("p", n=1),
-        ...         ]),
-        ... ])
-        >>> print(format_children_with_indices(tree))  # doctest: +NORMALIZE_WHITESPACE
-        _:  [-] s1
-        0:     --> Dummy
-        1:     --> Success
-        2:     [-] s2
-        _:         --> Dummy
-        3:     [-]
-        _:         --> Failure
-        _:         --> p
-        >>> print(format_children_with_indices(s2))  # doctest: +NORMALIZE_WHITESPACE
-        _:  [-] s2
-        0:      --> Dummy
-        >>> print(format_children_with_indices(s3))  # doctest: +NORMALIZE_WHITESPACE
-        _:  [-]
-        0:      --> Failure
-        1:      --> p
-    """
-    index_strings = []
-    i = 0
-    for b in iterate_nodes(composite):
-        if b in composite.children:
-            index_strings.append(str(i))
-            i += 1
-        else:
-            index_strings.append("_")
-
-    output = label_tree_lines(composite, index_strings)
-    return output
-
-
-def prompt_identify_library_node(
-    library, message: str = "Which action from the library?", display_nodes: bool = True
-) -> py_trees.behaviour.Behaviour:
-    key_node_mapping = {str(i): n for i, n in enumerate(library)}
-
-    if display_nodes:
-        text = f"{format_library_with_indices(library)}\n{message}"
-    else:
-        text = f"{message}"
-    index = click.prompt(text=text, type=click.Choice(key_node_mapping.keys()))
-
-    node = key_node_mapping[index]
-
-    return node
-
-
-def format_library_with_indices(library: List[py_trees.behaviour.Behaviour]):
-    return "\n".join([f"{i}: {n.name}" for i, n in enumerate(library)])
+    pass
 
 
 # =============================================================================
@@ -771,7 +801,7 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
     elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
         new_node = prompt_identify_library_node(
-            library, "Which node from the library?")
+            library, message="Which node from the library?")
         return new_node
     else:
         _logger.debug("in 'else'")
