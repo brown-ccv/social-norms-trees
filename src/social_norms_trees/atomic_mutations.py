@@ -23,12 +23,10 @@ CompositeIndex = TypeVar(
 BehaviorIdentifier = TypeVar(
     "BehaviorIdentifier", bound=Union[ExistingNode, NewNode, CompositeIndex]
 )
-BehaviorTreeNode = TypeVar(
-    "BehaviorTreeNode", bound=py_trees.behaviour.Behaviour)
+BehaviorTreeNode = TypeVar("BehaviorTreeNode", bound=py_trees.behaviour.Behaviour)
 BehaviorTree = TypeVar("BehaviorTree", bound=BehaviorTreeNode)
 BehaviorLibrary = TypeVar("BehaviorLibrary", bound=List[BehaviorTreeNode])
-TreeOrLibrary = TypeVar(
-    "TreeOrLibrary", bound=Union[BehaviorTree, BehaviorLibrary])
+TreeOrLibrary = TypeVar("TreeOrLibrary", bound=Union[BehaviorTree, BehaviorLibrary])
 
 
 # =============================================================================
@@ -451,15 +449,11 @@ def get_library_mapping(library: BehaviorLibrary) -> NodeMappingRepresentation:
 
     mapping = {str(i): n for i, n in enumerate(library)}
     labels = list(mapping.keys())
-    representation = "\n".join(
-        [f"{i}: {n.name}" for i, n in enumerate(library)])
+    representation = "\n".join([f"{i}: {n.name}" for i, n in enumerate(library)])
     return NodeMappingRepresentation(mapping, labels, representation)
 
 
-prompt_identify_library_node = partial(
-    prompt_identify,
-    function=get_library_mapping
-)
+prompt_identify_library_node = partial(prompt_identify, function=get_library_mapping)
 
 
 def get_composite_mapping(tree: BehaviorTree, skip_label="_"):
@@ -502,10 +496,7 @@ def get_composite_mapping(tree: BehaviorTree, skip_label="_"):
     return NodeMappingRepresentation(mapping, allowed_labels, representation)
 
 
-prompt_identify_composite = partial(
-    prompt_identify,
-    function=get_composite_mapping
-)
+prompt_identify_composite = partial(prompt_identify, function=get_composite_mapping)
 
 
 def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
@@ -559,10 +550,7 @@ def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
     return NodeMappingRepresentation(mapping, allowed_labels, representation)
 
 
-prompt_identify_child_index = partial(
-    prompt_identify,
-    function=get_child_index_mapping
-)
+prompt_identify_child_index = partial(prompt_identify, function=get_child_index_mapping)
 
 
 def get_position_mapping(tree):
@@ -570,18 +558,18 @@ def get_position_mapping(tree):
 
 
 
-        [-] S0
-            --> {1}
-            [-] S1
-              --> {2}
-              --> Dummy
-              --> {3}
-            --> {4}
-            [-] S2
-              --> {5}
-              --> Failure
-              --> {6}
-            --> {7}
+    [-] S0
+        --> {1}
+        [-] S1
+          --> {2}
+          --> Dummy
+          --> {3}
+        --> {4}
+        [-] S2
+          --> {5}
+          --> Failure
+          --> {6}
+        --> {7}
 
 
 
@@ -595,8 +583,7 @@ def get_position_mapping(tree):
 
 
 # Wrapper functions for the atomic operations which give them a UI.
-MutationResult = namedtuple(
-    "MutationResult", ["result", "tree", "function", "kwargs"])
+MutationResult = namedtuple("MutationResult", ["result", "tree", "function", "kwargs"])
 
 
 def mutate_chooser(*fs: Union[Callable], message="Which action?"):
@@ -622,7 +609,9 @@ def mutate_chooser(*fs: Union[Callable], message="Which action?"):
 
 def mutate_ui(
     f: Callable,
-) -> Callable[[py_trees.behaviour.Behaviour, List[py_trees.behaviour.Behaviour]], MutationResult]:
+) -> Callable[
+    [py_trees.behaviour.Behaviour, List[py_trees.behaviour.Behaviour]], MutationResult
+]:
     """Factory function for a tree mutator UI.
     This creates a version of the atomic function `f`
     which prompts the user for the appropriate arguments
@@ -663,14 +652,14 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         return node
     elif annotation_ == str(CompositeIndex):
         _logger.debug("in CompositeIndex")
-        composite_node = prompt_identify_composite(
-            tree, message="Which parent?")
+        composite_node = prompt_identify_composite(tree, message="Which parent?")
         index = prompt_identify_child_index(composite_node)
         return composite_node, index
     elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
         new_node = prompt_identify_library_node(
-            library, message="Which node from the library?")
+            library, message="Which node from the library?"
+        )
         return new_node
     else:
         _logger.debug("in 'else'")

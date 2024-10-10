@@ -61,8 +61,9 @@ def deserialize_library_element(description: dict):
 
     if node_type == "Sequence":
         if "children" in description.keys():
-            children = [deserialize_library_element(
-                child) for child in description["children"]]
+            children = [
+                deserialize_library_element(child) for child in description["children"]
+            ]
         else:
             children = []
 

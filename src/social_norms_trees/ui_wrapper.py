@@ -20,7 +20,11 @@ from social_norms_trees.atomic_mutations import (
     remove,
     end_experiment,
 )
-from social_norms_trees.serialize_tree import deserialize_library_element, serialize_tree, deserialize_tree
+from social_norms_trees.serialize_tree import (
+    deserialize_library_element,
+    serialize_tree,
+    deserialize_tree,
+)
 
 from social_norms_trees.behavior_library import BehaviorLibrary
 
@@ -50,8 +54,7 @@ def experiment_setup(db, origin_tree):
     print("\n")
     participant_id = participant_login()
 
-    experiment_id = initialize_experiment_record(
-        db, participant_id, origin_tree)
+    experiment_id = initialize_experiment_record(db, participant_id, origin_tree)
 
     print("\nSetup Complete.\n")
 
@@ -66,8 +69,7 @@ def participant_login():
 
 def load_resources(file_path):
     try:
-        print(
-            f"\nLoading behavior tree and behavior library from {file_path}...\n")
+        print(f"\nLoading behavior tree and behavior library from {file_path}...\n")
         with open(file_path, "r") as file:
             resources = json.load(file)
 
@@ -80,8 +82,7 @@ def load_resources(file_path):
     behavior_list = resources.get("behavior_library")
     context_paragraph = resources.get("context")
 
-    behavior_tree = deserialize_tree(
-        behavior_tree, BehaviorLibrary(behavior_list))
+    behavior_tree = deserialize_tree(behavior_tree, BehaviorLibrary(behavior_list))
 
     behavior_library = [deserialize_library_element(e) for e in behavior_list]
 
@@ -138,7 +139,7 @@ def run_experiment(tree, library):
     results_dict = {
         "start_time": datetime.now().isoformat(),
         "initial_behavior_tree": serialize_tree(tree),
-        "action_log": []
+        "action_log": [],
     }
 
     try:
@@ -148,11 +149,13 @@ def run_experiment(tree, library):
             if f is end_experiment:
                 break
             results = f(tree, library)
-            results_dict["action_log"].append({
-                "type": results.function.__name__,
-                "kwargs": serialize_function_arguments(results.kwargs),
-                "time": datetime.now().isoformat(),
-            })
+            results_dict["action_log"].append(
+                {
+                    "type": results.function.__name__,
+                    "kwargs": serialize_function_arguments(results.kwargs),
+                    "time": datetime.now().isoformat(),
+                }
+            )
 
     except QuitException:
         pass
@@ -183,8 +186,7 @@ def main(
     ],
     db_file: Annotated[
         pathlib.Path,
-        typer.Option(
-            help="file where the experimental results will be written"),
+        typer.Option(help="file where the experimental results will be written"),
     ] = "db.json",
     verbose: Annotated[bool, typer.Option("--verbose")] = False,
     debug: Annotated[bool, typer.Option("--debug")] = False,
@@ -206,8 +208,7 @@ def main(
 
     # load tree to run experiment on, and behavior library
 
-    original_tree, behavior_library, context_paragraph = load_resources(
-        resources_file)
+    original_tree, behavior_library, context_paragraph = load_resources(resources_file)
     print(f"\nContext of this experiment: {context_paragraph}")
 
     participant_id, experiment_id = experiment_setup(db, original_tree)
