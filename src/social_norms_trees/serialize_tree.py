@@ -1,4 +1,3 @@
-import py_trees
 from social_norms_trees.custom_node_library import CustomBehavior, CustomSequence
 
 
