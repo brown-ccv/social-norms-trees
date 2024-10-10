@@ -43,7 +43,35 @@ def serialize_tree(tree, include_children=True):
 def deserialize_library_element(description: dict):
     """
     Examples:
-        >>> deserialize_library_element({"type": "Sequence"})
+        >>> s = deserialize_library_element({"type": "Sequence", "name": "Sequence 0", "id": "s0"})
+        >>> s
+        <social_norms_trees.custom_node_library.CustomSequence object at 0x...>
+
+        >>> s.id_
+        's0'
+
+        >>> s.name
+        'Sequence 0'
+
+        >>> s.children
+        []
+
+        TODO: Implement selectors
+        >>> deserialize_library_element({"type": "Selector", "name": "Selector 0", "id": "s0"})
+        Traceback (most recent call last):
+        ...
+        NotImplementedError: node_type=Selector is not implemented
+
+        >>> b = deserialize_library_element({"type": "Behavior", "name": "Behavior 0", "id": "b0"})
+        >>> b
+        <social_norms_trees.custom_node_library.CustomBehavior object at 0x...>
+
+        >>> b.id_
+        'b0'
+
+        >>> b.name
+        'Behavior 0'
+
 
     """
     assert isinstance(description["type"], str), (
