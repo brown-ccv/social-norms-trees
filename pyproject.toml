@@ -121,5 +121,9 @@ build-backend = "hatchling.build"
 [tool.hatch]
 version.source = "vcs"
 
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+
 [tool.black]
 target-version = ['py311']
+
