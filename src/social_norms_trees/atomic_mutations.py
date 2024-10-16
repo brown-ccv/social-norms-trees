@@ -4,6 +4,7 @@ from functools import partial, wraps
 import logging
 from types import GenericAlias
 from typing import Callable, List, Mapping, NamedTuple, Tuple, TypeVar, Union, Dict
+from colorama import Fore, Back, Style
 
 import click
 import py_trees
@@ -365,6 +366,10 @@ class NodeMappingRepresentation(NamedTuple):
     labels: List[str]
     representation: str
 
+class InsertTypeMappingRepresentation(NamedTuple):
+    index_mapping: Dict
+    parent_child_mapping: Dict
+    tree_representation: str
 
 def prompt_identify(
     tree: TreeOrLibrary,
@@ -385,6 +390,33 @@ def prompt_identify(
     key = click.prompt(text=text, type=click.Choice(labels))
     node = mapping[key]
     return node
+
+
+#we need two types of "prompt_identify" functions
+#1 for the original style of displaying tree with numbers ordered on the left hand side
+#1 for the new style, where number is embedded in tree (insert, move aka insert_type)
+def insert_type_prompt_identify(
+    tree: TreeOrLibrary,
+    function: Callable[
+        [TreeOrLibrary], Tuple[Mapping[str, BehaviorIdentifier], List[str], str]
+    ],
+    message: str = "Choose position to insert the node?",
+) -> BehaviorIdentifier:
+
+    index_mapping, parent_child_mapping, tree_representation = function(tree)
+    
+    #display tree
+    print(tree_representation)
+
+    mapping = list(index_mapping.keys())
+    key = click.prompt(
+        text=message, 
+        type=click.Choice(mapping)
+    )
+
+    temp_parent = index_mapping[key]
+    child_list_index_1 = parent_child_mapping[temp_parent]
+    return temp_parent, child_list_index_1.index(key)
 
 
 def get_node_mapping(tree: BehaviorTree) -> NodeMappingRepresentation:
@@ -507,6 +539,88 @@ prompt_identify_composite = partial(
     function=get_composite_mapping
 )
 
+class TreeInsertionState:
+    def __init__(self):
+        self.index_mapping = {}
+        self.parent_child_mapping = {}
+        self.tree_representation = ""
+
+def append_line(state, content, level):
+    """
+    Appends a line representing an existing node to the tree representation string.
+    """
+    state.tree_representation += Fore.LIGHTBLACK_EX + ('    ' * level + content) + "\n"
+
+def append_insertion_point(state, content, level):
+    """
+    Appends a line representing an insertion point to the tree representation string.
+    """
+    state.tree_representation += Fore.WHITE + ('    ' * level + content) + "\n"
+
+def create_insertion_point(state, parent_node, level):
+    """
+    Create relevant insertion point(s) for a given parent node and updates the state with the new insertion index.
+    """
+    insertion_index = str(len(state.index_mapping))
+    append_insertion_point(state, f"--> {{{insertion_index}}}", level)
+    state.index_mapping[insertion_index] = parent_node
+
+    if parent_node in state.parent_child_mapping:
+        state.parent_child_mapping[parent_node].append(insertion_index)
+    else:
+        state.parent_child_mapping[parent_node] = [insertion_index]
+
+    
+def build_tree_with_insertion_points(node, state, level=0):
+    """
+    Recursively traverses the tree to construct a string representation with all possible insertion points,
+    while updating the state to reflect the current parent-node hierarchy and insertion mappings.
+    """
+
+    # Create an insertion point before this node, but only if its not the root level 
+    if level != 0:
+        create_insertion_point(state, node.parent, level)
+
+
+    # Display the current node
+    append_line(state, f"[-] {node.name}", level)
+
+    # Iterate through each child node
+    for child in node.children:
+        #For selector and sequence nodes
+        if isinstance(child, py_trees.composites.Composite):
+            # Recursive call on each child node
+            build_tree_with_insertion_points(child, state, level+1)
+            # Create additional insertion point after the last child of this composite node
+            if child == (node.children[-1]):
+                create_insertion_point(state, node, level + 1)
+
+        else:
+            #For leaf nodes, create insertion point before the leaf node first
+            create_insertion_point(state, node, level + 1)
+            #display the leaf node
+            append_line(state, f"--> {child.name}", level + 1)
+            #Create additional insertion point after the last leaf node
+            if child == (node.children[-1]):
+                create_insertion_point(state, node, level + 1)
+    
+    return state
+
+
+def get_insert_mapping(tree: BehaviorTree):
+    """
+    """
+
+    state = TreeInsertionState()
+    build_tree_with_insertion_points(tree, state)
+
+    return InsertTypeMappingRepresentation(state.index_mapping, state.parent_child_mapping, state.tree_representation)
+
+
+test_prompt_identify_index = partial(
+    insert_type_prompt_identify,
+    function=get_insert_mapping
+)
 
 def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
     """
@@ -568,7 +682,7 @@ prompt_identify_child_index = partial(
 def get_position_mapping(tree):
     """
 
-
+    For insert and move node actions
 
         [-] S0
             --> {1}
@@ -582,8 +696,20 @@ def get_position_mapping(tree):
               --> Failure
               --> {6}
             --> {7}
+        
+    For exchange and remove node actions
 
+        {0} [-] Sequence0
+        {1}     [-] Sequence1
+        {2}         --> Dummy1
+        {3}         --> Dummy2
+        {4}     --> Dummy2
+        {5}     [o] Sequence2
+        {6}         --> Failure
+        {7}         --> Dummy3
 
+        
+    Both will follow color scheme 
 
     """
     pass
@@ -662,9 +788,10 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         return node
     elif annotation_ == str(CompositeIndex):
         _logger.debug("in CompositeIndex")
-        composite_node = prompt_identify_composite(
-            tree, message="Which parent?")
-        index = prompt_identify_child_index(composite_node)
+        #instead of getting parent node, then children index, we simply ask for one index. 
+        #from one index, we determine the values "composite_node" and "index"
+        #and return
+        composite_node, index = test_prompt_identify_index(tree)
         return composite_node, index
     elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
@@ -699,29 +826,26 @@ def end_experiment(*args, **kwargs):
 def load_experiment():
     """Placeholder function for loading a tree and library (should come from a file)."""
     tree = py_trees.composites.Sequence(
-        "S0",
+        "Sequence0",
         False,
         children=[
-            py_trees.behaviours.Dummy("A"),
             py_trees.composites.Sequence(
-                "S1",
+                "Sequence1",
                 memory=False,
                 children=[
-                    py_trees.behaviours.Dummy("B"),
-                    py_trees.behaviours.Dummy("C"),
-                    py_trees.behaviours.Dummy("D"),
+                    py_trees.behaviours.Dummy("Dummy1"),
+                    py_trees.behaviours.Dummy("Dummy2"),
                 ],
             ),
+            py_trees.behaviours.Dummy("Dummy2"),
             py_trees.composites.Selector(
-                "S2",
+                "Sequence2",
                 memory=False,
                 children=[
-                    py_trees.behaviours.Dummy("E"),
-                    py_trees.behaviours.Dummy("F"),
                     py_trees.behaviours.Failure(),
+                    py_trees.behaviours.Dummy("Dummy3"),
                 ],
             ),
-            py_trees.behaviours.Success(),
         ],
     )
     library = [py_trees.behaviours.Success(), py_trees.behaviours.Failure()]
