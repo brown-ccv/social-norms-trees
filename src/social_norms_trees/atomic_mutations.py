@@ -406,12 +406,12 @@ def insert_type_prompt_identify(
 
     index_mapping, parent_child_mapping, tree_representation = function(tree)
     
-    #display tree
-    print(tree_representation)
+    #add tree to text display
+    text = f"{tree_representation}\n{message}"
 
     mapping = list(index_mapping.keys())
     key = click.prompt(
-        text=message, 
+        text=text, 
         type=click.Choice(mapping)
     )
 
