@@ -344,7 +344,8 @@ def label_tree_lines(
         # Make the line. If `t` is missing,
         # then we don't want a trailing space
         # so we strip that away
-        f"{i}: {t}".rstrip()
+        #TODO: update color
+        f"{Fore.WHITE}{{{i}}}: {t}{Style.RESET_ALL}".rstrip()
         for i, t in zip(padded_labels, tree_representation_lines)
     ]
 
@@ -394,7 +395,7 @@ def prompt_identify(
 
 #we need two types of "prompt_identify" functions
 #1 for the original style of displaying tree with numbers ordered on the left hand side
-#1 for the new style, where number is embedded in tree (insert, move aka insert_type)
+#1 for the new style, where number is embedded in tree (insert or move aka insert_type)
 def insert_type_prompt_identify(
     tree: TreeOrLibrary,
     function: Callable[
@@ -445,6 +446,7 @@ def get_node_mapping(tree: BehaviorTree) -> NodeMappingRepresentation:
         1:     --> Dummy
 
     """
+    #TODO: should we remove index 0 for root node? 
     mapping = {str(i): n for i, n in enumerate_nodes(tree)}
     labels = list(mapping.keys())
     representation = label_tree_lines(tree=tree, labels=labels)
@@ -549,13 +551,13 @@ def append_line(state, content, level):
     """
     Appends a line representing an existing node to the tree representation string.
     """
-    state.tree_representation += Fore.LIGHTBLACK_EX + ('    ' * level + content) + "\n"
+    state.tree_representation += Fore.LIGHTBLACK_EX + ('   ' * level + content) + "\n"
 
 def append_insertion_point(state, content, level):
     """
     Appends a line representing an insertion point to the tree representation string.
     """
-    state.tree_representation += Fore.WHITE + ('    ' * level + content) + "\n"
+    state.tree_representation += Fore.WHITE + ('   ' * level + content) + "\n"
 
 def create_insertion_point(state, parent_node, level):
     """
@@ -617,66 +619,66 @@ def get_insert_mapping(tree: BehaviorTree):
     return InsertTypeMappingRepresentation(state.index_mapping, state.parent_child_mapping, state.tree_representation)
 
 
-test_prompt_identify_index = partial(
+prompt_identify_insertion_index = partial(
     insert_type_prompt_identify,
     function=get_insert_mapping
 )
 
-def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
-    """
-    Examples:
-        >>> a = get_child_index_mapping(py_trees.behaviours.Dummy())
-        >>> a.mapping
-        {'0': 0}
+# def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
+#     """
+#     Examples:
+#         >>> a = get_child_index_mapping(py_trees.behaviours.Dummy())
+#         >>> a.mapping
+#         {'0': 0}
 
-        >>> a.labels
-        ['0']
+#         >>> a.labels
+#         ['0']
 
-        >>> print(a.representation)
-        _: --> Dummy
-        0:
+#         >>> print(a.representation)
+#         _: --> Dummy
+#         0:
 
-        >>> b = get_child_index_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
-        >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
-        {'0': 0, '1': 1}
+#         >>> b = get_child_index_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
+#         >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
+#         {'0': 0, '1': 1}
 
-        >>> b.labels
-        ['0', '1']
+#         >>> b.labels
+#         ['0', '1']
 
-        >>> print(b.representation)
-        _: [-]
-        0:     --> Dummy
-        1:
-    """
-    mapping = {}
-    display_labels, allowed_labels = [], []
+#         >>> print(b.representation)
+#         _: [-]
+#         0:     --> Dummy
+#         1:
+#     """
+#     mapping = {}
+#     display_labels, allowed_labels = [], []
 
-    for node in iterate_nodes(tree):
-        if node in tree.children:
-            index = tree.children.index(node)
-            label = str(index)
-            mapping[label] = index
-            allowed_labels.append(label)
-            display_labels.append(label)
-        else:
-            display_labels.append(skip_label)
+#     for node in iterate_nodes(tree):
+#         if node in tree.children:
+#             index = tree.children.index(node)
+#             label = str(index)
+#             mapping[label] = index
+#             allowed_labels.append(label)
+#             display_labels.append(label)
+#         else:
+#             display_labels.append(skip_label)
 
-    # Add the "after all the elements" label
-    post_list_index = len(tree.children)
-    post_list_label = str(post_list_index)
-    allowed_labels.append(post_list_label)
-    display_labels.append(post_list_label)
-    mapping[post_list_label] = post_list_index
+#     # Add the "after all the elements" label
+#     post_list_index = len(tree.children)
+#     post_list_label = str(post_list_index)
+#     allowed_labels.append(post_list_label)
+#     display_labels.append(post_list_label)
+#     mapping[post_list_label] = post_list_index
 
-    representation = label_tree_lines(tree=tree, labels=display_labels)
+#     representation = label_tree_lines(tree=tree, labels=display_labels)
 
-    return NodeMappingRepresentation(mapping, allowed_labels, representation)
+#     return NodeMappingRepresentation(mapping, allowed_labels, representation)
 
 
-prompt_identify_child_index = partial(
-    prompt_identify,
-    function=get_child_index_mapping
-)
+# prompt_identify_child_index = partial(
+#     prompt_identify,
+#     function=get_child_index_mapping
+# )
 
 
 def get_position_mapping(tree):
@@ -791,7 +793,7 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         #instead of getting parent node, then children index, we simply ask for one index. 
         #from one index, we determine the values "composite_node" and "index"
         #and return
-        composite_node, index = test_prompt_identify_index(tree)
+        composite_node, index = prompt_identify_insertion_index(tree)
         return composite_node, index
     elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
