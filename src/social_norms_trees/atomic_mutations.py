@@ -550,7 +550,9 @@ def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
     return NodeMappingRepresentation(mapping, allowed_labels, representation)
 
 
-prompt_identify_child_index = partial(prompt_identify, function=get_child_index_mapping)
+prompt_identify_child_index = partial(
+    prompt_identify, function=get_child_index_mapping, message="Which position?"
+)
 
 
 def get_position_mapping(tree):

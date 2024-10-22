@@ -1,7 +1,7 @@
 {
-    "context": "A nurse assistant robot in a hospital is taking medicine to Mrs. Jones during the day. The robot has already collected the medicine and enters the corridor outside Mrs. Jones' room. It needs to enter the room to take Mrs. Jones her medicine.",
+    "context": "A nurse assistant robot in a hospital is taking medicine to Mrs. Jones.\nIt's daytime.\nThe robot has collected the medicine and is in the corridor outside Mrs. Jones' room.\nIt needs to enter Mrs. Jones' room to take her the medicine.",
     "behavior_tree": {
-        "name": "",
+        "name": "Sequence",
         "type": "Sequence",
         "children": [
             {
@@ -21,7 +21,7 @@
     "behavior_library": [
         {
             "id": "anonymous-sequence",
-            "name": "",
+            "name": "Sequence",
             "type": "Sequence",
             "show": false
         },

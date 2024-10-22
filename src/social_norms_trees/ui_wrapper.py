@@ -31,6 +31,10 @@ from social_norms_trees.behavior_library import BehaviorLibrary
 _logger = logging.getLogger(__name__)
 
 
+def clear():
+    os.system("clear")
+
+
 def load_db(db_file):
     if os.path.exists(db_file):
         with open(db_file, "r") as f:
@@ -42,7 +46,7 @@ def load_db(db_file):
 def save_db(db, db_file):
     """Saves the Python dictionary back to db.json."""
 
-    print(f"\nWriting results of simulation to {db_file}...")
+    print(f"\nWriting results to {db_file}...")
 
     json_representation = json.dumps(db, indent=4)
 
@@ -50,13 +54,13 @@ def save_db(db, db_file):
         f.write(json_representation)
 
 
-def experiment_setup(db, origin_tree):
-    print("\n")
-    participant_id = participant_login()
+def experiment_setup(db, origin_tree, participant_id=None):
+    if participant_id is None:
+        participant_id = participant_login()
 
     experiment_id = initialize_experiment_record(db, participant_id, origin_tree)
 
-    print("\nSetup Complete.\n")
+    _logger.info("Setup Complete.")
 
     return participant_id, experiment_id
 
@@ -69,7 +73,9 @@ def participant_login():
 
 def load_resources(file_path):
     try:
-        print(f"\nLoading behavior tree and behavior library from {file_path}...\n")
+        _logger.info(
+            f"\nLoading behavior tree and behavior library from {file_path}...\n"
+        )
         with open(file_path, "r") as file:
             resources = json.load(file)
 
@@ -86,7 +92,7 @@ def load_resources(file_path):
 
     behavior_library = [deserialize_library_element(e) for e in behavior_list]
 
-    print("Loading success.")
+    _logger.info("Loading success.")
     return behavior_tree, behavior_library, context_paragraph
 
 
@@ -132,9 +138,8 @@ def serialize_function_arguments(args):
         return args
 
 
-def run_experiment(tree, library):
+def run_experiment(tree, library, context_paragraph):
     # Loop for the actual experiment part, which takes user input to decide which action to take
-    print("\nExperiment beginning...\n")
 
     results_dict = {
         "start_time": datetime.now().isoformat(),
@@ -144,7 +149,12 @@ def run_experiment(tree, library):
 
     try:
         while True:
+            clear()
+            print("Agent Interactive Training Prototype Simulator", end="\n\n")
+            print(f"Context: {context_paragraph}\n")
+            print("This is what the robot plans to do:", end="\n\n")
             display_tree(tree)
+            print("Do you want to make any changes?", end="\n\n")
             f = mutate_chooser(insert, move, exchange, remove, end_experiment)
             if f is end_experiment:
                 break
@@ -162,7 +172,7 @@ def run_experiment(tree, library):
 
     except Exception:
         print(
-            "\nAn error has occured during the experiment, the experiment will now end."
+            "An error has occured during the experiment, the experiment will now end."
         )
         results_dict["error_log"] = traceback.format_exc()
 
@@ -190,6 +200,7 @@ def main(
     ] = "db.json",
     verbose: Annotated[bool, typer.Option("--verbose")] = False,
     debug: Annotated[bool, typer.Option("--debug")] = False,
+    participant_id: Annotated[str, typer.Option("--participant-id")] = None,
 ):
     if debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -200,8 +211,6 @@ def main(
     else:
         logging.basicConfig()
 
-    print("AIT Prototype #1 Simulator")
-
     # TODO: write up some context, assumptions made in the README
 
     db = load_db(db_file)
@@ -209,17 +218,19 @@ def main(
     # load tree to run experiment on, and behavior library
 
     original_tree, behavior_library, context_paragraph = load_resources(resources_file)
-    print(f"\nContext of this experiment: {context_paragraph}")
 
-    participant_id, experiment_id = experiment_setup(db, original_tree)
-    results = run_experiment(original_tree, behavior_library)
+    participant_id, experiment_id = experiment_setup(
+        db, original_tree, participant_id=participant_id
+    )
+
+    results = run_experiment(original_tree, behavior_library, context_paragraph)
     db[experiment_id] = results
     _logger.debug(db)
     save_db(db, db_file)
 
     # TODO: define export file, that will be where we export the results to
 
-    print("\nSimulation has ended.")
+    _logger.info("\nSimulation has ended.")
 
     # TODO: visualize the differences between old and new behavior trees after experiment.
     # Potentially use git diff
