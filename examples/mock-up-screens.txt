@@ -1,0 +1,107 @@
+######
+# Starting screeen
+######
+
+Agent Interactive Training Prototype Simulator
+
+Context: A nurse assistant robot in a hospital is taking medicine to Mrs. Jones.
+It's daytime.
+The robot has collected the medicine and is in the corridor outside Mrs. Jones' room.
+It needs to enter Mrs. Jones' room to take her the medicine.
+
+This is what the robot plans to do:
+
+[-] Sequence
+    --> Approach the door
+    --> Open the door
+    --> Go through the doorway
+
+Do you want to make any changes?
+
+0: Insert a new node.
+1: Move a node.
+2: Exchange two nodes.
+3: Remove a node.
+4: I'm done, end the experiment.
+Which action?: 
+
+
+######
+# Open the medicine cabinet screen
+######
+
+Agent Interactive Training Prototype Simulator
+
+Context: The robot is at the medicine cabinet. It needs to open the door, but it's locked.
+
+This is what the robot plans to do:
+
+[-] Selector
+    --> Try to unlock the cabinet
+    --> Wait some period of time
+    --> Try to unlock the cabinet
+    --> Wait some period of time
+    --> Call your supervisor
+
+Do you want to make any changes?
+
+0: Insert a new node.
+1: Move a node.
+2: Exchange two nodes.
+3: Remove a node.
+4: No, I'm done, move to the next action.
+Which action?: 
+
+######
+# Open the medicine cabinet screen (bullet point form)
+######
+
+Agent Interactive Training Prototype Simulator
+
+Context: The robot is at the medicine cabinet. It needs to open the door, but it's locked.
+
+The robot will:
+- Try to unlock the cabinet,
+- If that doesn't work, wait some period of time,
+- If that doesn't work, try to unlock the cabinet
+- If that doesn't work, wait some period of time,
+- If that doesn't work, call its supervisor.
+
+Do you want to make any changes?
+
+(I)nsert a new behavior.
+(M)ove a behavior.
+(S)witch the position of two behaviors.
+(E)xchange two adjacent behaviors.
+(R)emove a behavior.
+(N)o, I'm done, move to the next action.
+Which action? (I, M, S, E, R, N): 
+
+
+(Chat form variant)
+...
+
+
+"I'll try to unlock the cabinet first."
+<Wait for 1s>
+"If that doesn't work, I'll wait some period of time."
+<Wait for 1s>
+"I'll try to unlock the cabinet again."
+<Wait for 1s>
+"If that doesn't work, I'll wait some period of time."
+<Wait for 1s>
+"I'm calling my supervisor!"
+
+(S)TOP! Don't do that. 
+<If S key is pressed, stop the flow and ask:>
+
+"What should I do differently?"
+(I)nsert a new behavior.
+(M)ove a behavior.
+(S)witch the position of two behaviors.
+(E)xchange two adjacent behaviors.
+(R)emove a behavior.
+(N)o, I'm done, move to the next action.
+Which action? (I, M, S, E, R, N): 
+
+...
