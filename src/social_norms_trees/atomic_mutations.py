@@ -367,11 +367,6 @@ class NodeMappingRepresentation(NamedTuple):
     labels: List[str]
     representation: str
 
-class InsertTypeMappingRepresentation(NamedTuple):
-    index_mapping: Dict
-    parent_child_mapping: Dict
-    tree_representation: str
-
 def prompt_identify(
     tree: TreeOrLibrary,
     function: Callable[
@@ -389,36 +384,8 @@ def prompt_identify(
         text = f"{message}"
 
     key = click.prompt(text=text, type=click.Choice(labels))
-    node = mapping[key]
-    return node
-
-
-#we need two types of "prompt_identify" functions
-#1 for the original style of displaying tree with numbers ordered on the left hand side
-#1 for the new style, where number is embedded in tree (insert or move aka insert_type)
-def insert_type_prompt_identify(
-    tree: TreeOrLibrary,
-    function: Callable[
-        [TreeOrLibrary], Tuple[Mapping[str, BehaviorIdentifier], List[str], str]
-    ],
-    message: str = "Choose position to insert the node?",
-) -> BehaviorIdentifier:
-
-    index_mapping, parent_child_mapping, tree_representation = function(tree)
-    
-    #add tree to text display
-    text = f"{tree_representation}\n{message}"
-
-    mapping = list(index_mapping.keys())
-    key = click.prompt(
-        text=text, 
-        type=click.Choice(mapping)
-    )
-
-    temp_parent = index_mapping[key]
-    child_list_index_1 = parent_child_mapping[temp_parent]
-    return temp_parent, child_list_index_1.index(key)
-
+    value = mapping[key]
+    return value
 
 def get_node_mapping(tree: BehaviorTree) -> NodeMappingRepresentation:
     """
@@ -547,24 +514,26 @@ class TreeInsertionState:
         self.parent_child_mapping = {}
         self.tree_representation = ""
 
-def append_line(state, content, level):
+def _append_line(state, content, level):
     """
     Appends a line representing an existing node to the tree representation string.
     """
-    state.tree_representation += Fore.LIGHTBLACK_EX + ('   ' * level + content) + "\n"
+    # state.tree_representation += Fore.LIGHTBLACK_EX + ('   ' * level + content) + "\n"
+    state.tree_representation += ('   ' * level + content) + "\n"
 
-def append_insertion_point(state, content, level):
+def _append_insertion_point(state, content, level):
     """
     Appends a line representing an insertion point to the tree representation string.
     """
-    state.tree_representation += Fore.WHITE + ('   ' * level + content) + "\n"
+    # state.tree_representation += Fore.WHITE + ('   ' * level + content) + "\n"
+    state.tree_representation += ('   ' * level + content) + "\n"
 
-def create_insertion_point(state, parent_node, level):
+def _create_insertion_point(state, parent_node, level):
     """
     Create relevant insertion point(s) for a given parent node and updates the state with the new insertion index.
     """
     insertion_index = str(len(state.index_mapping))
-    append_insertion_point(state, f"--> {{{insertion_index}}}", level)
+    _append_insertion_point(state, f"--> {{{insertion_index}}}", level)
     state.index_mapping[insertion_index] = parent_node
 
     if parent_node in state.parent_child_mapping:
@@ -573,38 +542,59 @@ def create_insertion_point(state, parent_node, level):
         state.parent_child_mapping[parent_node] = [insertion_index]
 
     
-def build_tree_with_insertion_points(node, state, level=0):
+def _build_tree_with_insertion_points(node, state, level=0):
     """
     Recursively traverses the tree to construct a string representation with all possible insertion points,
     while updating the state to reflect the current parent-node hierarchy and insertion mappings.
+
+    Examples: 
+
+        >>> tree = py_trees.composites.Sequence("S0", memory = False, children = [])
+        >>> state = TreeInsertionState()
+        >>> res = _build_tree_with_insertion_points(tree, state)
+        >>> print(res.tree_representation)
+        [-] S0
+           --> {0}
+        <BLANKLINE>
+
+        >>> tree2 = py_trees.composites.Sequence("S0", memory = False, children = [
+        ... py_trees.behaviours.Dummy()])
+        >>> state2 = TreeInsertionState()
+        >>> res2 = _build_tree_with_insertion_points(tree2, state2)
+        >>> print(res2.tree_representation)
+        [-] S0
+           --> {0}
+           --> Dummy
+           --> {1}
+        <BLANKLINE>
     """
 
     # Create an insertion point before this node, but only if its not the root level 
     if level != 0:
-        create_insertion_point(state, node.parent, level)
+        _create_insertion_point(state, node.parent, level)
 
 
     # Display the current node
-    append_line(state, f"[-] {node.name}", level)
+    _append_line(state, f"[-] {node.name}", level)
 
     # Iterate through each child node
     for child in node.children:
         #For selector and sequence nodes
         if isinstance(child, py_trees.composites.Composite):
             # Recursive call on each child node
-            build_tree_with_insertion_points(child, state, level+1)
+            _build_tree_with_insertion_points(child, state, level+1)
             # Create additional insertion point after the last child of this composite node
             if child == (node.children[-1]):
-                create_insertion_point(state, node, level + 1)
+                _create_insertion_point(state, node, level + 1)
 
         else:
             #For leaf nodes, create insertion point before the leaf node first
-            create_insertion_point(state, node, level + 1)
+            _create_insertion_point(state, node, level + 1)
             #display the leaf node
-            append_line(state, f"--> {child.name}", level + 1)
+            _append_line(state, f"--> {child.name}", level + 1)
             #Create additional insertion point after the last leaf node
             if child == (node.children[-1]):
-                create_insertion_point(state, node, level + 1)
+                _create_insertion_point(state, node, level + 1)
     
     return state
 
@@ -614,71 +604,73 @@ def get_insert_mapping(tree: BehaviorTree):
     """
 
     state = TreeInsertionState()
-    build_tree_with_insertion_points(tree, state)
+    _build_tree_with_insertion_points(tree, state)
+    mapping = {label: (state.index_mapping[label], state.parent_child_mapping[state.index_mapping[label]].index(label)) for label in state.index_mapping.keys()}
+    labels = state.index_mapping.keys()
 
-    return InsertTypeMappingRepresentation(state.index_mapping, state.parent_child_mapping, state.tree_representation)
+    return NodeMappingRepresentation(mapping, labels, state.tree_representation)
 
 
 prompt_identify_insertion_index = partial(
-    insert_type_prompt_identify,
+    prompt_identify,
     function=get_insert_mapping
 )
 
-# def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
-#     """
-#     Examples:
-#         >>> a = get_child_index_mapping(py_trees.behaviours.Dummy())
-#         >>> a.mapping
-#         {'0': 0}
+def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
+    """
+    Examples:
+        >>> a = get_child_index_mapping(py_trees.behaviours.Dummy())
+        >>> a.mapping
+        {'0': 0}
 
-#         >>> a.labels
-#         ['0']
+        >>> a.labels
+        ['0']
 
-#         >>> print(a.representation)
-#         _: --> Dummy
-#         0:
+        >>> print(a.representation)
+        _: --> Dummy
+        0:
 
-#         >>> b = get_child_index_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
-#         >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
-#         {'0': 0, '1': 1}
+        >>> b = get_child_index_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
+        >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
+        {'0': 0, '1': 1}
 
-#         >>> b.labels
-#         ['0', '1']
+        >>> b.labels
+        ['0', '1']
 
-#         >>> print(b.representation)
-#         _: [-]
-#         0:     --> Dummy
-#         1:
-#     """
-#     mapping = {}
-#     display_labels, allowed_labels = [], []
+        >>> print(b.representation)
+        _: [-]
+        0:     --> Dummy
+        1:
+    """
+    mapping = {}
+    display_labels, allowed_labels = [], []
 
-#     for node in iterate_nodes(tree):
-#         if node in tree.children:
-#             index = tree.children.index(node)
-#             label = str(index)
-#             mapping[label] = index
-#             allowed_labels.append(label)
-#             display_labels.append(label)
-#         else:
-#             display_labels.append(skip_label)
+    for node in iterate_nodes(tree):
+        if node in tree.children:
+            index = tree.children.index(node)
+            label = str(index)
+            mapping[label] = index
+            allowed_labels.append(label)
+            display_labels.append(label)
+        else:
+            display_labels.append(skip_label)
 
-#     # Add the "after all the elements" label
-#     post_list_index = len(tree.children)
-#     post_list_label = str(post_list_index)
-#     allowed_labels.append(post_list_label)
-#     display_labels.append(post_list_label)
-#     mapping[post_list_label] = post_list_index
+    # Add the "after all the elements" label
+    post_list_index = len(tree.children)
+    post_list_label = str(post_list_index)
+    allowed_labels.append(post_list_label)
+    display_labels.append(post_list_label)
+    mapping[post_list_label] = post_list_index
 
-#     representation = label_tree_lines(tree=tree, labels=display_labels)
+    representation = label_tree_lines(tree=tree, labels=display_labels)
 
-#     return NodeMappingRepresentation(mapping, allowed_labels, representation)
+    return NodeMappingRepresentation(mapping, allowed_labels, representation)
 
 
-# prompt_identify_child_index = partial(
-#     prompt_identify,
-#     function=get_child_index_mapping
-# )
+prompt_identify_child_index = partial(
+    prompt_identify,
+    function=get_child_index_mapping
+)
 
 
 def get_position_mapping(tree):
