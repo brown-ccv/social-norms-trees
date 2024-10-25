@@ -658,7 +658,17 @@ def get_insert_mapping(tree: BehaviorTree):
 
     state = TreeInsertionState()
     _build_tree_with_insertion_points(tree, state)
-    mapping = {label: (state.index_mapping[label], state.parent_child_mapping[state.index_mapping[label]].index(label)) for label in state.index_mapping.keys()}
+    #create mapping where each label maps to a tuple:
+    #first element is the parent node reference for the current label index
+    #second element is the index of the label in its parent's child list in parent_child_mapping
+    mapping = {
+    label: (
+        state.index_mapping[label],  #parent node reference
+        state.parent_child_mapping[state.index_mapping[label]].index(label)  #position in parent's child list
+        )
+        for label in state.index_mapping.keys()
+    }    
+    
     labels = state.index_mapping.keys()
 
     return NodeMappingRepresentation(mapping, labels, state.tree_representation)
