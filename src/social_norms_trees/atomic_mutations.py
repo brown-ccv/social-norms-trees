@@ -567,6 +567,18 @@ def _build_tree_with_insertion_points(node, state, level=0):
            --> Dummy
            --> {1}
         <BLANKLINE>
+        
+        >>> tree3 = py_trees.composites.Sequence("S0", memory = False, children = [
+        ... py_trees.composites.Sequence("S1", memory = False, children = [])])
+        >>> state3 = TreeInsertionState()
+        >>> res3 = _build_tree_with_insertion_points(tree3, state3)
+        >>> print(res3.tree_representation)
+        [-] S0
+           --> {0}
+           [-] S1
+              --> {1}
+           --> {2}
+        <BLANKLINE>
     """
 
     # Create an insertion point before this node, but only if its not the root level 
@@ -576,6 +588,10 @@ def _build_tree_with_insertion_points(node, state, level=0):
 
     # Display the current node
     _append_line(state, f"[-] {node.name}", level)
+
+    #edge case, if sequence node exists but there are no children defined, set child node as potential insertion point
+    if not node.children:
+        _create_insertion_point(state, node, level+1)
 
     # Iterate through each child node
     for child in node.children:
@@ -596,11 +612,14 @@ def _build_tree_with_insertion_points(node, state, level=0):
             if child == (node.children[-1]):
                 _create_insertion_point(state, node, level + 1)
     
+    
     return state
 
 
 def get_insert_mapping(tree: BehaviorTree):
     """
+    Examples: 
+        >>> 
     """
 
     state = TreeInsertionState()
