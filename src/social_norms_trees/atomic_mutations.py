@@ -619,7 +619,41 @@ def _build_tree_with_insertion_points(node, state, level=0):
 def get_insert_mapping(tree: BehaviorTree):
     """
     Examples: 
-        >>> 
+
+        >>> child_node_1 = py_trees.behaviours.Dummy()
+        >>> sequence_node_1 = py_trees.composites.Sequence("S1", False, children=[])
+        >>> root_node_1 = py_trees.composites.Sequence("S0", False, children=[child_node_1, sequence_node_1])
+
+        >>> a = get_insert_mapping(root_node_1)
+        
+        >>> list(a.labels)
+        ['0', '1', '2', '3']
+        
+        >>> a.mapping["0"][0] == root_node_1
+        True
+        >>> a.mapping["2"][0] == sequence_node_1
+        True
+        >>> a.mapping["3"][0] == root_node_1
+        True
+
+        >>> a.mapping["0"][1] == 0
+        True
+        >>> a.mapping["1"][1] == 1
+        True
+        >>> a.mapping["2"][1] == 0
+        True
+        >>> a.mapping["3"][1] == 2
+        True
+
+        >>> print(a.representation)
+        [-] S0
+           --> {0}
+           --> Dummy
+           --> {1}
+           [-] S1
+              --> {2}
+           --> {3}
+        <BLANKLINE>
     """
 
     state = TreeInsertionState()
