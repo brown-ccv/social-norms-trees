@@ -1,6 +1,6 @@
+import logging
 import pathlib
-import time
-from typing import Annotated
+from typing import Annotated, List
 import click
 from datetime import datetime
 import json
@@ -11,13 +11,20 @@ import traceback
 
 import typer
 
-from social_norms_trees.mutate_tree import (
-    move_node,
-    exchange_nodes,
-    remove_node,
-    add_node,
+from social_norms_trees.atomic_mutations import (
+    QuitException,
+    exchange,
+    insert,
+    move,
+    mutate_chooser,
+    remove,
+    end_experiment,
 )
-from social_norms_trees.serialize_tree import serialize_tree, deserialize_tree
+from social_norms_trees.serialize_tree import (
+    deserialize_library_element,
+    serialize_tree,
+    deserialize_tree,
+)
 
 from social_norms_trees.behavior_library import BehaviorLibrary
 
@@ -37,8 +44,10 @@ def save_db(db, db_file):
 
     print(f"\nWriting results of simulation to {db_file}...")
 
+    json_representation = json.dumps(db, indent=4)
+
     with open(db_file, "w") as f:
-        json.dump(db, f, indent=4)
+        f.write(json_representation)
 
 
 def experiment_setup(db, origin_tree):
@@ -73,9 +82,9 @@ def load_resources(file_path):
     behavior_list = resources.get("behavior_library")
     context_paragraph = resources.get("context")
 
-    behavior_library = BehaviorLibrary(behavior_list)
+    behavior_tree = deserialize_tree(behavior_tree, BehaviorLibrary(behavior_list))
 
-    behavior_tree = deserialize_tree(behavior_tree, behavior_library)
+    behavior_library = [deserialize_library_element(e) for e in behavior_list]
 
     print("Loading success.")
     return behavior_tree, behavior_library, context_paragraph
@@ -99,64 +108,69 @@ def initialize_experiment_record(db, participant_id, origin_tree):
     return experiment_id
 
 
-def run_experiment(db, origin_tree, experiment_id, behavior_library):
+def display_tree(tree):
+    print(py_trees.display.ascii_tree(tree))
+    return
+
+
+def serialize_function_arguments(args):
+    results = {}
+    if isinstance(args, dict):
+        for key, value in args.items():
+            results[key] = serialize_function_arguments(value)
+        return results
+    elif isinstance(args, py_trees.behaviour.Behaviour):
+        value = serialize_tree(args, include_children=False)
+        return value
+    elif isinstance(args, tuple):
+        value = tuple(serialize_function_arguments(i) for i in args)
+        return value
+    elif isinstance(args, list):
+        value = [serialize_function_arguments(i) for i in args]
+        return value
+    else:
+        return args
+
+
+def run_experiment(tree, library):
     # Loop for the actual experiment part, which takes user input to decide which action to take
     print("\nExperiment beginning...\n")
 
+    results_dict = {
+        "start_time": datetime.now().isoformat(),
+        "initial_behavior_tree": serialize_tree(tree),
+        "action_log": [],
+    }
+
     try:
         while True:
-            print(py_trees.display.ascii_tree(origin_tree))
-            user_choice = click.prompt(
-                "Would you like to perform an action on the behavior tree?",
-                show_choices=True,
-                type=click.Choice(["y", "n"], case_sensitive=False),
+            display_tree(tree)
+            f = mutate_chooser(insert, move, exchange, remove, end_experiment)
+            if f is end_experiment:
+                break
+            results = f(tree, library)
+            results_dict["action_log"].append(
+                {
+                    "type": results.function.__name__,
+                    "kwargs": serialize_function_arguments(results.kwargs),
+                    "time": datetime.now().isoformat(),
+                }
             )
 
-            if user_choice == "y":
-                action = click.prompt(
-                    "1. move node\n"
-                    + "2. exchange node\n"
-                    + "3. remove node\n"
-                    + "4. add node\n"
-                    + "Please select an action to perform on the behavior tree",
-                    type=click.IntRange(min=1, max=4),
-                    show_choices=True,
-                )
-
-                if action == 1:
-                    origin_tree, action_log = move_node(origin_tree)
-                    db[experiment_id]["action_history"].append(action_log)
-                elif action == 2:
-                    origin_tree, action_log = exchange_nodes(origin_tree)
-                    db[experiment_id]["action_history"].append(action_log)
-
-                elif action == 3:
-                    origin_tree, action_log = remove_node(origin_tree)
-                    db[experiment_id]["action_history"].append(action_log)
-
-                elif action == 4:
-                    origin_tree, action_log = add_node(origin_tree, behavior_library)
-                    db[experiment_id]["action_history"].append(action_log)
-
-                else:
-                    print(
-                        "Invalid choice, please select a valid number (1, 2, 3, or 4).\n"
-                    )
-
-            # user_choice == "n", end simulation run
-            else:
-                break
+    except QuitException:
+        pass
 
     except Exception:
         print(
             "\nAn error has occured during the experiment, the experiment will now end."
         )
-        db[experiment_id]["error_log"] = traceback.format_exc()
+        results_dict["error_log"] = traceback.format_exc()
 
-    finally:
-        db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
-        db[experiment_id]["end_date"] = datetime.now().isoformat()
-        return db
+    # finally:
+    results_dict["final_behavior_tree"] = serialize_tree(tree)
+    results_dict["start_time"] = datetime.now().isoformat()
+
+    return results_dict
 
 
 app = typer.Typer()
@@ -174,7 +188,18 @@ def main(
         pathlib.Path,
         typer.Option(help="file where the experimental results will be written"),
     ] = "db.json",
+    verbose: Annotated[bool, typer.Option("--verbose")] = False,
+    debug: Annotated[bool, typer.Option("--debug")] = False,
 ):
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+        _logger.debug("debug logging")
+    elif verbose:
+        logging.basicConfig(level=logging.INFO)
+        _logger.debug("verbose logging")
+    else:
+        logging.basicConfig()
+
     print("AIT Prototype #1 Simulator")
 
     # TODO: write up some context, assumptions made in the README
@@ -187,7 +212,9 @@ def main(
     print(f"\nContext of this experiment: {context_paragraph}")
 
     participant_id, experiment_id = experiment_setup(db, original_tree)
-    db = run_experiment(db, original_tree, experiment_id, behavior_library)
+    results = run_experiment(original_tree, behavior_library)
+    db[experiment_id] = results
+    _logger.debug(db)
     save_db(db, db_file)
 
     # TODO: define export file, that will be where we export the results to
