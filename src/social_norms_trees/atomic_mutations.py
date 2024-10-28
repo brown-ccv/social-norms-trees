@@ -309,7 +309,7 @@ def label_tree_lines(
     """Label the lines of a tree.
     Examples:
         >>> print(label_tree_lines(py_trees.behaviours.Dummy(), labels=["0"]))
-        0: --> Dummy
+        {0}: --> Dummy
         >>> tree = py_trees.composites.Sequence(
         ...             "S1",
         ...             False,
@@ -318,20 +318,20 @@ def label_tree_lines(
         ...                 py_trees.behaviours.Dummy()]
         ...         )
         >>> print(label_tree_lines(tree, labels=["A", "B", "C"]))
-        A: [-] S1
-        B:     --> Dummy
-        C:     --> Dummy
+        {A}: [-] S1
+        {B}:     --> Dummy
+        {C}:     --> Dummy
         >>> print(label_tree_lines(tree, labels=["AAA", "BB", "C"]))
-        AAA: [-] S1
-         BB:     --> Dummy
-          C:     --> Dummy
+        {AAA}: [-] S1
+        { BB}:     --> Dummy
+        {  C}:     --> Dummy
 
         If there are more labels than lines, then those are shown too:
         >>> print(label_tree_lines(tree, labels=["AAA", "BB", "C", "O"]))
-        AAA: [-] S1
-         BB:     --> Dummy
-          C:     --> Dummy
-          O:
+        {AAA}: [-] S1
+        { BB}:     --> Dummy
+        {  C}:     --> Dummy
+        {  O}:
     """
     max_len = max([len(s) for s in labels])
     padded_labels = [s.rjust(max_len) for s in labels]
@@ -343,7 +343,8 @@ def label_tree_lines(
         # then we don't want a trailing space
         # so we strip that away
         #TODO: update color
-        f"{Fore.WHITE}{{{i}}}: {t}{Style.RESET_ALL}".rstrip()
+        # f"{Fore.WHITE}{{{i}}}: {t}{Style.RESET_ALL}".rstrip()
+        f"{{{i}}}: {t}".rstrip()
         for i, t in zip(padded_labels, tree_representation_lines)
     ]
 
@@ -376,6 +377,8 @@ def prompt_identify(
 
     mapping, labels, representation = function(tree)
 
+    print("ha!")
+    # print(representation)
     if display_nodes:
         text = f"{representation}\n{message}"
     else:
@@ -396,8 +399,8 @@ def get_node_mapping(tree: BehaviorTree) -> NodeMappingRepresentation:
         ['0']
 
         >>> print(a.representation)
-        0: --> Dummy
-
+        {0}: --> Dummy
+        
         >>> b = get_node_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
         >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
         {'0': <py_trees.composites.Sequence object at 0x...>,
@@ -407,8 +410,8 @@ def get_node_mapping(tree: BehaviorTree) -> NodeMappingRepresentation:
         ['0', '1']
 
         >>> print(b.representation)
-        0: [-]
-        1:     --> Dummy
+        {0}: [-]
+        {1}:     --> Dummy
 
     """
     #TODO: should we remove index 0 for root node? 
@@ -468,7 +471,7 @@ def get_composite_mapping(tree: BehaviorTree, skip_label="_"):
         []
 
         >>> print(a.representation)
-        _: --> Dummy
+        {_}: --> Dummy
 
         >>> b = get_composite_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
         >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
@@ -478,8 +481,8 @@ def get_composite_mapping(tree: BehaviorTree, skip_label="_"):
         ['0']
 
         >>> print(b.representation)
-        0: [-]
-        _:     --> Dummy
+        {0}: [-]
+        {_}:     --> Dummy
     """
     mapping = {}
     display_labels, allowed_labels = [], []
@@ -681,9 +684,8 @@ def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
         ['0']
 
         >>> print(a.representation)
-        _: --> Dummy
-        0:
-
+        {_}: --> Dummy
+        {0}:
         >>> b = get_child_index_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
         >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
         {'0': 0, '1': 1}
@@ -692,9 +694,9 @@ def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
         ['0', '1']
 
         >>> print(b.representation)
-        _: [-]
-        0:     --> Dummy
-        1:
+        {_}: [-]
+        {0}:     --> Dummy
+        {1}:
     """
     mapping = {}
     display_labels, allowed_labels = [], []
@@ -873,29 +875,30 @@ def end_experiment():
 
 def load_experiment():
     """Placeholder function for loading a tree and library (should come from a file)."""
-    tree = py_trees.composites.Sequence(
-        "Sequence0",
-        False,
-        children=[
-            py_trees.composites.Sequence(
-                "Sequence1",
-                memory=False,
-                children=[
-                    py_trees.behaviours.Dummy("Dummy1"),
-                    py_trees.behaviours.Dummy("Dummy2"),
-                ],
-            ),
-            py_trees.behaviours.Dummy("Dummy2"),
-            py_trees.composites.Selector(
-                "Sequence2",
-                memory=False,
-                children=[
-                    py_trees.behaviours.Failure(),
-                    py_trees.behaviours.Dummy("Dummy3"),
-                ],
-            ),
-        ],
-    )
+    # tree = py_trees.composites.Sequence(
+    #     "Sequence0",
+    #     False,
+    #     children=[
+    #         py_trees.composites.Sequence(
+    #             "Sequence1",
+    #             memory=False,
+    #             children=[
+    #                 py_trees.behaviours.Dummy("Dummy1"),
+    #                 py_trees.behaviours.Dummy("Dummy2"),
+    #             ],
+    #         ),
+    #         py_trees.behaviours.Dummy("Dummy2"),
+    #         py_trees.composites.Selector(
+    #             "Sequence2",
+    #             memory=False,
+    #             children=[
+    #                 py_trees.behaviours.Failure(),
+    #                 py_trees.behaviours.Dummy("Dummy3"),
+    #             ],
+    #         ),
+    #     ],
+    # )
+    tree = py_trees.behaviours.Dummy()
     library = [py_trees.behaviours.Success(), py_trees.behaviours.Failure()]
     return tree, library
 
