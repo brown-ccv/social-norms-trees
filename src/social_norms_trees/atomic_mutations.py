@@ -4,7 +4,7 @@ from functools import partial, wraps
 import logging
 from types import GenericAlias
 from typing import Callable, List, Mapping, NamedTuple, Tuple, TypeVar, Union, Dict
-from colorama import Fore, Back, Style
+# from colorama import Fore, Back, Style
 
 import click
 import py_trees
