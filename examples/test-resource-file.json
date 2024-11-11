@@ -20,10 +20,6 @@
                 "name": "retrieve the medicine"
             },
             {
-                "id": "retrieve_medicine",
-                "name": "retrieve the medicine"
-            },
-            {
                 "id": "wait_for_cabinet_access",
                 "name": "wait at medicine cabinet until it is accessible"
             },
@@ -37,6 +33,7 @@
             "unlock_cabinet": "Upon reaching the cabinet, the robot finds it locked and is unable to electronically open it with the password."
         }
     },
+
     "travel_to_desired_floor": {
         "context": "",
         "children": [
@@ -72,8 +69,6 @@
             }
         ],
         "interruptions": {
-            "take_path_to_medicine_cabinet": "While moving toward the medicine cabinet, the robot is interrupted by a visitor: “Hello, I’m looking for room 536 to visit John. Can you help me find the way?”",
-            "unlock_cabinet": "Upon reaching the cabinet, the robot finds it locked and is unable to electronically open it with the password."
         }
     }
 }
