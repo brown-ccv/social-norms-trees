@@ -4,6 +4,7 @@ from functools import partial, wraps
 import logging
 from types import GenericAlias
 from typing import Callable, List, Mapping, NamedTuple, Tuple, TypeVar, Union, Dict
+# from colorama import Fore, Back, Style
 
 import click
 import py_trees
@@ -308,7 +309,7 @@ def label_tree_lines(
     """Label the lines of a tree.
     Examples:
         >>> print(label_tree_lines(py_trees.behaviours.Dummy(), labels=["0"]))
-        0: --> Dummy
+        {0}: --> Dummy
         >>> tree = py_trees.composites.Sequence(
         ...             "S1",
         ...             False,
@@ -317,20 +318,20 @@ def label_tree_lines(
         ...                 py_trees.behaviours.Dummy()]
         ...         )
         >>> print(label_tree_lines(tree, labels=["A", "B", "C"]))
-        A: [-] S1
-        B:     --> Dummy
-        C:     --> Dummy
+        {A}: [-] S1
+        {B}:     --> Dummy
+        {C}:     --> Dummy
         >>> print(label_tree_lines(tree, labels=["AAA", "BB", "C"]))
-        AAA: [-] S1
-         BB:     --> Dummy
-          C:     --> Dummy
+        {AAA}: [-] S1
+        { BB}:     --> Dummy
+        {  C}:     --> Dummy
 
         If there are more labels than lines, then those are shown too:
         >>> print(label_tree_lines(tree, labels=["AAA", "BB", "C", "O"]))
-        AAA: [-] S1
-         BB:     --> Dummy
-          C:     --> Dummy
-          O:
+        {AAA}: [-] S1
+        { BB}:     --> Dummy
+        {  C}:     --> Dummy
+        {  O}:
     """
     max_len = max([len(s) for s in labels])
     padded_labels = [s.rjust(max_len) for s in labels]
@@ -341,7 +342,9 @@ def label_tree_lines(
         # Make the line. If `t` is missing,
         # then we don't want a trailing space
         # so we strip that away
-        f"{i}: {t}".rstrip()
+        #TODO: update color
+        # f"{Fore.WHITE}{{{i}}}: {t}{Style.RESET_ALL}".rstrip()
+        f"{{{i}}}: {t}".rstrip()
         for i, t in zip(padded_labels, tree_representation_lines)
     ]
 
@@ -363,7 +366,6 @@ class NodeMappingRepresentation(NamedTuple):
     labels: List[str]
     representation: str
 
-
 def prompt_identify(
     tree: TreeOrLibrary,
     function: Callable[
@@ -375,15 +377,16 @@ def prompt_identify(
 
     mapping, labels, representation = function(tree)
 
+    print("ha!")
+    # print(representation)
     if display_nodes:
         text = f"{representation}\n{message}"
     else:
         text = f"{message}"
 
     key = click.prompt(text=text, type=click.Choice(labels))
-    node = mapping[key]
-    return node
-
+    value = mapping[key]
+    return value
 
 def get_node_mapping(tree: BehaviorTree) -> NodeMappingRepresentation:
     """
@@ -396,8 +399,8 @@ def get_node_mapping(tree: BehaviorTree) -> NodeMappingRepresentation:
         ['0']
 
         >>> print(a.representation)
-        0: --> Dummy
-
+        {0}: --> Dummy
+        
         >>> b = get_node_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
         >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
         {'0': <py_trees.composites.Sequence object at 0x...>,
@@ -407,10 +410,11 @@ def get_node_mapping(tree: BehaviorTree) -> NodeMappingRepresentation:
         ['0', '1']
 
         >>> print(b.representation)
-        0: [-]
-        1:     --> Dummy
+        {0}: [-]
+        {1}:     --> Dummy
 
     """
+    #TODO: should we remove index 0 for root node? 
     mapping = {str(i): n for i, n in enumerate_nodes(tree)}
     labels = list(mapping.keys())
     representation = label_tree_lines(tree=tree, labels=labels)
@@ -467,7 +471,7 @@ def get_composite_mapping(tree: BehaviorTree, skip_label="_"):
         []
 
         >>> print(a.representation)
-        _: --> Dummy
+        {_}: --> Dummy
 
         >>> b = get_composite_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
         >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
@@ -477,8 +481,8 @@ def get_composite_mapping(tree: BehaviorTree, skip_label="_"):
         ['0']
 
         >>> print(b.representation)
-        0: [-]
-        _:     --> Dummy
+        {0}: [-]
+        {_}:     --> Dummy
     """
     mapping = {}
     display_labels, allowed_labels = [], []
@@ -498,6 +502,176 @@ def get_composite_mapping(tree: BehaviorTree, skip_label="_"):
 
 prompt_identify_composite = partial(prompt_identify, function=get_composite_mapping)
 
+class TreeInsertionState:
+    def __init__(self):
+        self.index_mapping = {}
+        self.parent_child_mapping = {}
+        self.tree_representation = ""
+
+def _append_line(state, content, level):
+    """
+    Appends a line representing an existing node to the tree representation string.
+    """
+    # state.tree_representation += Fore.LIGHTBLACK_EX + ('   ' * level + content) + "\n"
+    state.tree_representation += ('   ' * level + content) + "\n"
+
+def _append_insertion_point(state, content, level):
+    """
+    Appends a line representing an insertion point to the tree representation string.
+    """
+    # state.tree_representation += Fore.WHITE + ('   ' * level + content) + "\n"
+    state.tree_representation += ('   ' * level + content) + "\n"
+
+def _create_insertion_point(state, parent_node, level):
+    """
+    Create relevant insertion point(s) for a given parent node and updates the state with the new insertion index.
+    """
+    insertion_index = str(len(state.index_mapping))
+    _append_insertion_point(state, f"--> {{{insertion_index}}}", level)
+    state.index_mapping[insertion_index] = parent_node
+
+    if parent_node in state.parent_child_mapping:
+        state.parent_child_mapping[parent_node].append(insertion_index)
+    else:
+        state.parent_child_mapping[parent_node] = [insertion_index]
+
+    
+def _build_tree_with_insertion_points(node, state, level=0):
+    """
+    Recursively traverses the tree to construct a string representation with all possible insertion points,
+    while updating the state to reflect the current parent-node hierarchy and insertion mappings.
+
+    Examples: 
+
+        >>> tree = py_trees.composites.Sequence("S0", memory = False, children = [])
+        >>> state = TreeInsertionState()
+        >>> res = _build_tree_with_insertion_points(tree, state)
+        >>> print(res.tree_representation)
+        [-] S0
+           --> {0}
+        <BLANKLINE>
+
+        >>> tree2 = py_trees.composites.Sequence("S0", memory = False, children = [
+        ... py_trees.behaviours.Dummy()])
+        >>> state2 = TreeInsertionState()
+        >>> res2 = _build_tree_with_insertion_points(tree2, state2)
+        >>> print(res2.tree_representation)
+        [-] S0
+           --> {0}
+           --> Dummy
+           --> {1}
+        <BLANKLINE>
+        
+        >>> tree3 = py_trees.composites.Sequence("S0", memory = False, children = [
+        ... py_trees.composites.Sequence("S1", memory = False, children = [])])
+        >>> state3 = TreeInsertionState()
+        >>> res3 = _build_tree_with_insertion_points(tree3, state3)
+        >>> print(res3.tree_representation)
+        [-] S0
+           --> {0}
+           [-] S1
+              --> {1}
+           --> {2}
+        <BLANKLINE>
+    """
+
+    # Create an insertion point before this node, but only if its not the root level 
+    if level != 0:
+        _create_insertion_point(state, node.parent, level)
+
+
+    # Display the current node
+    _append_line(state, f"[-] {node.name}", level)
+
+    #edge case, if sequence node exists but there are no children defined, set child node as potential insertion point
+    if not node.children:
+        _create_insertion_point(state, node, level+1)
+
+    # Iterate through each child node
+    for child in node.children:
+        #For selector and sequence nodes
+        if isinstance(child, py_trees.composites.Composite):
+            # Recursive call on each child node
+            _build_tree_with_insertion_points(child, state, level+1)
+            # Create additional insertion point after the last child of this composite node
+            if child == (node.children[-1]):
+                _create_insertion_point(state, node, level + 1)
+
+        else:
+            #For leaf nodes, create insertion point before the leaf node first
+            _create_insertion_point(state, node, level + 1)
+            #display the leaf node
+            _append_line(state, f"--> {child.name}", level + 1)
+            #Create additional insertion point after the last leaf node
+            if child == (node.children[-1]):
+                _create_insertion_point(state, node, level + 1)
+    
+    
+    return state
+
+
+def get_insert_mapping(tree: BehaviorTree):
+    """
+    Examples: 
+
+        >>> child_node_1 = py_trees.behaviours.Dummy()
+        >>> sequence_node_1 = py_trees.composites.Sequence("S1", False, children=[])
+        >>> root_node_1 = py_trees.composites.Sequence("S0", False, children=[child_node_1, sequence_node_1])
+
+        >>> a = get_insert_mapping(root_node_1)
+        
+        >>> list(a.labels)
+        ['0', '1', '2', '3']
+        
+        >>> a.mapping["0"][0] == root_node_1
+        True
+        >>> a.mapping["2"][0] == sequence_node_1
+        True
+        >>> a.mapping["3"][0] == root_node_1
+        True
+
+        >>> a.mapping["0"][1] == 0
+        True
+        >>> a.mapping["1"][1] == 1
+        True
+        >>> a.mapping["2"][1] == 0
+        True
+        >>> a.mapping["3"][1] == 2
+        True
+
+        >>> print(a.representation)
+        [-] S0
+           --> {0}
+           --> Dummy
+           --> {1}
+           [-] S1
+              --> {2}
+           --> {3}
+        <BLANKLINE>
+    """
+
+    state = TreeInsertionState()
+    _build_tree_with_insertion_points(tree, state)
+    #create mapping where each label maps to a tuple:
+    #first element is the parent node reference for the current label index
+    #second element is the index of the label in its parent's child list in parent_child_mapping
+    mapping = {
+    label: (
+        state.index_mapping[label],  #parent node reference
+        state.parent_child_mapping[state.index_mapping[label]].index(label)  #position in parent's child list
+        )
+        for label in state.index_mapping.keys()
+    }    
+    
+    labels = state.index_mapping.keys()
+
+    return NodeMappingRepresentation(mapping, labels, state.tree_representation)
+
+
+prompt_identify_insertion_index = partial(
+    prompt_identify,
+    function=get_insert_mapping
+)
 
 def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
     """
@@ -510,9 +684,8 @@ def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
         ['0']
 
         >>> print(a.representation)
-        _: --> Dummy
-        0:
-
+        {_}: --> Dummy
+        {0}:
         >>> b = get_child_index_mapping(py_trees.composites.Sequence("", False, children=[py_trees.behaviours.Dummy()]))
         >>> b.mapping  # doctest: +NORMALIZE_WHITESPACE
         {'0': 0, '1': 1}
@@ -521,9 +694,9 @@ def get_child_index_mapping(tree: BehaviorTree, skip_label="_"):
         ['0', '1']
 
         >>> print(b.representation)
-        _: [-]
-        0:     --> Dummy
-        1:
+        {_}: [-]
+        {0}:     --> Dummy
+        {1}:
     """
     mapping = {}
     display_labels, allowed_labels = [], []
@@ -556,22 +729,34 @@ prompt_identify_child_index = partial(prompt_identify, function=get_child_index_
 def get_position_mapping(tree):
     """
 
+    For insert and move node actions
 
+        [-] S0
+            --> {1}
+            [-] S1
+              --> {2}
+              --> Dummy
+              --> {3}
+            --> {4}
+            [-] S2
+              --> {5}
+              --> Failure
+              --> {6}
+            --> {7}
+        
+    For exchange and remove node actions
 
-    [-] S0
-        --> {1}
-        [-] S1
-          --> {2}
-          --> Dummy
-          --> {3}
-        --> {4}
-        [-] S2
-          --> {5}
-          --> Failure
-          --> {6}
-        --> {7}
+        {0} [-] Sequence0
+        {1}     [-] Sequence1
+        {2}         --> Dummy1
+        {3}         --> Dummy2
+        {4}     --> Dummy2
+        {5}     [o] Sequence2
+        {6}         --> Failure
+        {7}         --> Dummy3
 
-
+        
+    Both will follow color scheme 
 
     """
     pass
@@ -652,8 +837,10 @@ def prompt_get_mutate_arguments(annotation: GenericAlias, tree, library):
         return node
     elif annotation_ == str(CompositeIndex):
         _logger.debug("in CompositeIndex")
-        composite_node = prompt_identify_composite(tree, message="Which parent?")
-        index = prompt_identify_child_index(composite_node)
+        #instead of getting parent node, then children index, we simply ask for one index. 
+        #from one index, we determine the values "composite_node" and "index"
+        #and return
+        composite_node, index = prompt_identify_insertion_index(tree)
         return composite_node, index
     elif annotation_ == str(NewNode):
         _logger.debug("in NewNode")
@@ -688,32 +875,30 @@ def end_experiment():
 
 def load_experiment():
     """Placeholder function for loading a tree and library (should come from a file)."""
-    tree = py_trees.composites.Sequence(
-        "S0",
-        False,
-        children=[
-            py_trees.behaviours.Dummy("A"),
-            py_trees.composites.Sequence(
-                "S1",
-                memory=False,
-                children=[
-                    py_trees.behaviours.Dummy("B"),
-                    py_trees.behaviours.Dummy("C"),
-                    py_trees.behaviours.Dummy("D"),
-                ],
-            ),
-            py_trees.composites.Selector(
-                "S2",
-                memory=False,
-                children=[
-                    py_trees.behaviours.Dummy("E"),
-                    py_trees.behaviours.Dummy("F"),
-                    py_trees.behaviours.Failure(),
-                ],
-            ),
-            py_trees.behaviours.Success(),
-        ],
-    )
+    # tree = py_trees.composites.Sequence(
+    #     "Sequence0",
+    #     False,
+    #     children=[
+    #         py_trees.composites.Sequence(
+    #             "Sequence1",
+    #             memory=False,
+    #             children=[
+    #                 py_trees.behaviours.Dummy("Dummy1"),
+    #                 py_trees.behaviours.Dummy("Dummy2"),
+    #             ],
+    #         ),
+    #         py_trees.behaviours.Dummy("Dummy2"),
+    #         py_trees.composites.Selector(
+    #             "Sequence2",
+    #             memory=False,
+    #             children=[
+    #                 py_trees.behaviours.Failure(),
+    #                 py_trees.behaviours.Dummy("Dummy3"),
+    #             ],
+    #         ),
+    #     ],
+    # )
+    tree = py_trees.behaviours.Dummy()
     library = [py_trees.behaviours.Success(), py_trees.behaviours.Failure()]
     return tree, library
 
