@@ -21,61 +21,61 @@
     "behavior_library": [
         {
             "id": "anonymous-sequence",
-            "display_name": "",
+            "name": "",
             "type": "Sequence",
             "show": false
         },
         {
             "id": "approach-door",
-            "display_name": "Approach the door",
+            "name": "Approach the door",
             "type": "Behavior",
             "show": true
         },
         {
             "id": "open-door",
-            "display_name": "Open the door",
+            "name": "Open the door",
             "type": "Behavior",
             "show": true
         },
         {
             "id": "go-through-doorway",
-            "display_name": "Go through the doorway",
+            "name": "Go through the doorway",
             "type": "Behavior",
             "show": true
         },
         {
             "id": "knock-on-the-door",
-            "display_name": "Knock on the door",
+            "name": "Knock on the door",
             "type": "Behavior",
             "show": true
         },
         {
             "id": "sing-a-song",
-            "display_name": "Sing a song",
+            "name": "Sing a song",
             "type": "Behavior",
             "show": true
         },
         {
             "id": "announce-your-presence",
-            "display_name": "Announce your presence",
+            "name": "Announce your presence",
             "type": "Behavior",
             "show": true
         },
         {
             "id": "contact-supervisor-guidance",
-            "display_name": "Contact supervisor for guidance",
+            "name": "Contact supervisor for guidance",
             "type": "Behavior",
             "show": true
         },
         {
             "id": "stop",
-            "display_name": "Stop",
+            "name": "Stop",
             "type": "Behavior",
             "show": true
         },
         {
             "id": "return-to-charging-station",
-            "display_name": "Return to charging station",
+            "name": "Return to charging station",
             "type": "Behavior",
             "show": false
         }
