@@ -6,10 +6,13 @@ from datetime import datetime
 import json
 import os
 import uuid
-import py_trees
 import traceback
+import time
 
 import typer
+
+from social_norms_trees.behaviour_tree_library import Behaviour, Sequence
+
 
 from social_norms_trees.atomic_mutations import (
     QuitException,
@@ -20,15 +23,8 @@ from social_norms_trees.atomic_mutations import (
     remove,
     end_experiment,
 )
-from social_norms_trees.serialize_tree import (
-    deserialize_library_element,
-    serialize_tree,
-    deserialize_tree,
-)
+from social_norms_trees.serialize_tree import serialize_tree, deserialize_tree
 
-from social_norms_trees.behavior_library import BehaviorLibrary
-
-_logger = logging.getLogger(__name__)
 
 
 def load_db(db_file):
@@ -50,11 +46,11 @@ def save_db(db, db_file):
         f.write(json_representation)
 
 
-def experiment_setup(db, origin_tree):
+def experiment_setup(db):
     print("\n")
     participant_id = participant_login()
 
-    experiment_id = initialize_experiment_record(db, participant_id, origin_tree)
+    experiment_id = initialize_experiment_record(db, participant_id)
 
     print("\nSetup Complete.\n")
 
@@ -67,6 +63,46 @@ def participant_login():
     return participant_id
 
 
+
+
+def deserialize_behaviours(behaviours):
+    deserialized_behaviours = {}
+
+    for behaviour in behaviours:
+        deserialized_behaviours[behaviour["id"]] = Behaviour(id=behaviour["id"], name=behaviour["name"])
+
+    return deserialized_behaviours
+
+def build_tree(context, children, behaviours):
+    
+    children_behaviours = []
+    
+    parent_node = Sequence(
+        name=context,
+        memory=False,
+    )
+
+    for behaviour_id in children:
+        behaviours[behaviour_id].parent = parent_node
+        children_behaviours.append(behaviours[behaviour_id])
+    
+    return Sequence(
+        name=context,
+        memory=False,
+        children= children_behaviours
+    )
+
+        
+def display_tree(node, indent=0):
+    """Recursively display the behavior tree in a readable format."""
+    if isinstance(node, Sequence):
+        print(" " * indent + node.name)
+        if node.children:
+            for child in node.children:
+                display_tree(child, indent + 4)
+    elif isinstance(node, Behaviour):
+        print(" " * indent + " -> " +  node.name)
+
 def load_resources(file_path):
     try:
         print(f"\nLoading behavior tree and behavior library from {file_path}...\n")
@@ -78,19 +114,29 @@ def load_resources(file_path):
     except Exception:
         raise RuntimeError("Error")
 
-    behavior_tree = resources.get("behavior_tree")
-    behavior_list = resources.get("behavior_library")
-    context_paragraph = resources.get("context")
+    all_resources = {}
 
-    behavior_tree = deserialize_tree(behavior_tree, BehaviorLibrary(behavior_list))
+    for subtree in resources:
+        
+        children = resources[subtree].get("children")
+        behaviour_list = resources[subtree].get("behaviour_library")
+        context_paragraph = resources[subtree].get("context")
 
-    behavior_library = [deserialize_library_element(e) for e in behavior_list]
+        #deserialize behavior_list
+        behaviours = deserialize_behaviours(behaviour_list)
+        
+        #then use it to build the subgoal behavior tree
+        sub_tree = build_tree(context_paragraph, children, behaviours)
 
-    print("Loading success.")
-    return behavior_tree, behavior_library, context_paragraph
+        all_resources[subtree] = {
+            "context": context_paragraph,
+            "behaviours": behaviours,
+            "sub_tree": sub_tree
+        }
+       
+    return all_resources
 
-
-def initialize_experiment_record(db, participant_id, origin_tree):
+def initialize_experiment_record(db, participant_id):
     experiment_id = str(uuid.uuid4())
 
     # TODO: look into python data class
@@ -98,7 +144,6 @@ def initialize_experiment_record(db, participant_id, origin_tree):
     experiment_record = {
         "experiment_id": experiment_id,
         "participant_id": participant_id,
-        "base_behavior_tree": serialize_tree(origin_tree),
         "start_date": datetime.now().isoformat(),
         "action_history": [],
     }
@@ -107,70 +152,117 @@ def initialize_experiment_record(db, participant_id, origin_tree):
 
     return experiment_id
 
+def summarize_behaviours_check(subgoal_resources):
+    print("Bot: Here are the actions, in order, that I will take to achieve this goal.")
+    for index, action in enumerate(subgoal_resources["sub_tree"].children):
+        print(f"{index}: {action.name}")
+    
+    print("Bot: Shall I proceed?")
+    user_choice = click.prompt(
+                "Choose option",
+                show_choices=True,
+                type=click.Choice(["Continue", "Stop"], case_sensitive=False),
+            )
 
-def display_tree(tree):
-    print(py_trees.display.ascii_tree(tree))
-    return
+    if user_choice == "Stop":
+        run_tree_manipulation(subgoal_resources["behaviours"], subgoal_resources["sub_tree"])
+        
+            
 
+def run_tree_manipulation(behaviour_library, tree):
+    display_tree(tree)
 
-def serialize_function_arguments(args):
-    results = {}
-    if isinstance(args, dict):
-        for key, value in args.items():
-            results[key] = serialize_function_arguments(value)
-        return results
-    elif isinstance(args, py_trees.behaviour.Behaviour):
-        value = serialize_tree(args, include_children=False)
-        return value
-    elif isinstance(args, tuple):
-        value = tuple(serialize_function_arguments(i) for i in args)
-        return value
-    elif isinstance(args, list):
-        value = [serialize_function_arguments(i) for i in args]
-        return value
-    else:
-        return args
+    print("done.")
 
 
-def run_experiment(tree, library):
+
+    # try:
+    #     while True:
+    #         print(py_trees.display.ascii_tree(origin_tree))
+    #         user_choice = click.prompt(
+    #             "Would you like to perform an action on the behavior tree?",
+    #             show_choices=True,
+    #             type=click.Choice(["y", "n"], case_sensitive=False),
+    #         )
+
+    #         if user_choice == "y":
+    #             action = click.prompt(
+    #                 "1. move node\n"
+    #                 + "2. exchange node\n"
+    #                 + "3. remove node\n"
+    #                 + "4. add node\n"
+    #                 + "Please select an action to perform on the behavior tree",
+    #                 type=click.IntRange(min=1, max=4),
+    #                 show_choices=True,
+    #             )
+
+    #             if action == 1:
+    #                 origin_tree, action_log = move_node(origin_tree)
+    #                 db[experiment_id]["action_history"].append(action_log)
+    #             elif action == 2:
+    #                 origin_tree, action_log = exchange_nodes(origin_tree)
+    #                 db[experiment_id]["action_history"].append(action_log)
+
+    #             elif action == 3:
+    #                 origin_tree, action_log = remove_node(origin_tree)
+    #                 db[experiment_id]["action_history"].append(action_log)
+
+    #             elif action == 4:
+    #                 origin_tree, action_log = add_node(origin_tree, behavior_library)
+    #                 db[experiment_id]["action_history"].append(action_log)
+
+    #             else:
+    #                 print(
+    #                     "Invalid choice, please select a valid number (1, 2, 3, or 4).\n"
+    #                 )
+
+    #         # user_choice == "n", end simulation run
+    #         else:
+    #             break
+
+    # except Exception:
+    #     print(
+    #         "\nAn error has occured during the experiment, the experiment will now end."
+    #     )
+    #     db[experiment_id]["error_log"] = traceback.format_exc()
+
+    # finally:
+    #     db[experiment_id]["final_behavior_tree"] = serialize_tree(origin_tree)
+    #     db[experiment_id]["end_date"] = datetime.now().isoformat()
+    #     return db
+    
+
+def run_milestone(subgoal_resources, title):
+    print(f"\nBot: I am starting the following milestone: {title}\n")
+
+    time.sleep(2)
+    #node dictionary has 3 attributes
+    # - context
+    # - behaviours list
+    # - subtree, with children list
+
+    summarize_behaviours_check(subgoal_resources)
+    
+    time.sleep(2)
+    print("\nBot: Okay, I will begin.\n")
+
+    for action in subgoal_resources["sub_tree"].children:        
+        time.sleep(2)
+        print(f"Bot: I am {action.name}")
+        time.sleep(1)
+        print(f"Action in progress..")
+        print("\n")
+
+    print(f"Bot: The following milestone has been reached: {title}\n")
+
+
+
+def run_experiment(db, all_resources, experiment_id):
     # Loop for the actual experiment part, which takes user input to decide which action to take
     print("\nExperiment beginning...\n")
 
-    results_dict = {
-        "start_time": datetime.now().isoformat(),
-        "initial_behavior_tree": serialize_tree(tree),
-        "action_log": [],
-    }
-
-    try:
-        while True:
-            display_tree(tree)
-            f = mutate_chooser(insert, move, exchange, remove, end_experiment)
-            if f is end_experiment:
-                break
-            results = f(tree, library)
-            results_dict["action_log"].append(
-                {
-                    "type": results.function.__name__,
-                    "kwargs": serialize_function_arguments(results.kwargs),
-                    "time": datetime.now().isoformat(),
-                }
-            )
-
-    except QuitException:
-        pass
-
-    except Exception:
-        print(
-            "\nAn error has occured during the experiment, the experiment will now end."
-        )
-        results_dict["error_log"] = traceback.format_exc()
-
-    # finally:
-    results_dict["final_behavior_tree"] = serialize_tree(tree)
-    results_dict["start_time"] = datetime.now().isoformat()
-
-    return results_dict
+    for subgoal in all_resources:
+        run_milestone(all_resources[subgoal], subgoal)
 
 
 app = typer.Typer()
@@ -208,14 +300,12 @@ def main(
 
     # load tree to run experiment on, and behavior library
 
-    original_tree, behavior_library, context_paragraph = load_resources(resources_file)
-    print(f"\nContext of this experiment: {context_paragraph}")
+    all_resources = load_resources(resources_file)
+    # print(f"\nContext of this experiment: {context_paragraph}")
 
-    participant_id, experiment_id = experiment_setup(db, original_tree)
-    results = run_experiment(original_tree, behavior_library)
-    db[experiment_id] = results
-    _logger.debug(db)
-    save_db(db, db_file)
+    participant_id, experiment_id = experiment_setup(db)
+    db = run_experiment(db, all_resources, experiment_id)
+    # save_db(db, db_file)
 
     # TODO: define export file, that will be where we export the results to
 

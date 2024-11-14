@@ -1,12 +1,12 @@
 {
     "pick_up_medicine": {
-        "context": "",
+        "context": "pick up the medicine",
         "children": [
             "take_path_to_medicine_cabinet",
             "unlock_cabinet",
             "retrieve_medicine"
         ],
-        "behavior_library": [
+        "behaviour_library": [
             {
                 "id": "take_path_to_medicine_cabinet",
                 "name": "take acceptable path to the medicine cabinet"
@@ -38,14 +38,14 @@
         }
     },
     "travel_to_desired_floor": {
-        "context": "",
+        "context": "travel to the desired floor",
         "children": [
             "take_path_to_elevator",
             "get_into_elevator",
             "press_correct_floor_button",
             "exit_elevator"
         ],
-        "behavior_library": [
+        "behaviour_library": [
             {
                 "id": "take_path_to_elevator",
                 "name": "take acceptable path to the elevator"

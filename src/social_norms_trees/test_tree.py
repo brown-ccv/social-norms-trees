@@ -235,12 +235,12 @@ class EnvironmentSimulator:
 
 interruption1 = Interruption(
     interruption_event="take acceptable path to the medicine cabinet",
-    context="While moving toward the medicine cabinet, the robot is interrupted by a visitor: “Hello, I’m looking for room 536 to visit John. Can you help me find the way?”"
+    interruption_context="While moving toward the medicine cabinet, the robot is interrupted by a visitor: “Hello, I’m looking for room 536 to visit John. Can you help me find the way?”"
 )
 
 interruption2 = Interruption(
     interruption_event="unlock the cabinet",
-    context="Upon reaching the cabinet, the robot finds it locked and is unable to electronically open it with the password."
+    interruption_context="Upon reaching the cabinet, the robot finds it locked and is unable to electronically open it with the password."
 )
 
 
@@ -249,6 +249,16 @@ pick_up_medicine_environment = EnvironmentSimulator(
 )
 
 #keyboard interrupts, typer and click you can get keyboard interrupts. by throwing exceptions
+
+
+
+#------------------------------------
+
+
+
+
+#get input from user
+
 
 def run_experiment(node):
     print(f"Starting the following experiment: {node.name}\n")
@@ -274,9 +284,9 @@ def run_milestone(node):
         print(f"Action in progress..")
 
         #check for interruption
-        if action.name in pick_up_medicine_environment.interruptions.keys():
-            print("-- interruption --")
-            print(pick_up_medicine_environment.interruptions[action.name])
+        # if action.name in pick_up_medicine_environment.interruptions.keys():
+        #     print("-- interruption --")
+        #     print(pick_up_medicine_environment.interruptions[action.name])
         print("\n")
 
     print(f"Bot: The following milestone has been reached: {node.name}\n")
