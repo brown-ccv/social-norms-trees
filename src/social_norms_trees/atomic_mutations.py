@@ -152,11 +152,8 @@ def move(
 
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
-        Sequence(name='',
-                  memory=False,
-                  children=[Behaviour(name='Success',
-                                id=None,
-                                parent=...),
+        Sequence(name='', memory=False,
+                  children=[Behaviour(name='Success', id=None, parent=...),
                             Behaviour(name='Failure',
                                 id=None,
                                 parent=...)])
@@ -164,8 +161,7 @@ def move(
         >>> move(failure_node, (tree, 0))
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
-        Sequence(name='',
-                  memory=False,
+        Sequence(name='', memory=False,
                   children=[Behaviour(name='Failure',
                                 id=None,
                                 parent=...),
@@ -183,74 +179,105 @@ def move(
 # # Node and Position Selectors
 # # =============================================================================
 
+from typing import Union, Generator
 
-# def iterate_nodes(tree: Behaviour):
-#     """
-#     Examples:
-#         >>> list(iterate_nodes(py_trees.behaviours.Dummy()))
-#         ... # doctest: +ELLIPSIS
-#         [<py_trees.behaviours.Dummy object at 0x...>]
-#         >>> list(iterate_nodes(
-#         ...     py_trees.composites.Sequence("", False, children=[
-#         ...         py_trees.behaviours.Dummy(),
-#         ... ])))  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-#         [<py_trees.composites.Sequence object at 0x...>,
-#          <py_trees.behaviours.Dummy object at 0x...>]
-#         >>> list(iterate_nodes(
-#         ...     py_trees.composites.Sequence("", False, children=[
-#         ...         py_trees.behaviours.Dummy(),
-#         ...         py_trees.behaviours.Dummy(),
-#         ...         py_trees.composites.Sequence("", False, children=[
-#         ...             py_trees.behaviours.Dummy(),
-#         ...         ]),
-#         ... ])))  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-#         [<py_trees.composites.Sequence object at 0x...>,
-#          <py_trees.behaviours.Dummy object at 0x...>,
-#          <py_trees.behaviours.Dummy object at 0x...>,
-#          <py_trees.composites.Sequence object at 0x...>,
-#          <py_trees.behaviours.Dummy object at 0x...>]
-#     """
-#     yield tree
-#     for child in tree.children:
-#         yield from iterate_nodes(child)
+def iterate_nodes(tree: Union[Behaviour, Sequence]):
+    """
+    Examples:
+        >>> dummy_node = Behaviour(name="Dummy")
+
+        >>> list(iterate_nodes(dummy_node))
+        ... # doctest: +ELLIPSIS
+        [Behaviour(name='Dummy', id=None, parent=None)]
+
+        >>> sequence = Sequence("", False, children=[dummy_node])
+        >>> pprint(list(iterate_nodes(sequence)))
+        ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        [Sequence(name='', memory=False, 
+                    children=[Behaviour(name='Dummy', id=None, parent=None)]), 
+                            Behaviour(name='Dummy', id=None, parent=None)]
+
+        >>> dummy_node_2 = Behaviour(name="Dummy")
+        >>> dummy_node_3 = Behaviour(name="Dummy")
+        >>> sequence_2 = Sequence("", False, children=[dummy_node_3])
+        >>> sequence_3 = Sequence("", False, children=[dummy_node, dummy_node_2, sequence_2])
+        >>> pprint(list(iterate_nodes(sequence_3)))
+        ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        [Sequence(name='', memory=False, 
+                    children=[Behaviour(name='Dummy', id=None, parent=None), 
+                            Behaviour(name='Dummy', id=None, parent=None), 
+                            Sequence(name='', memory=False, 
+                                     children=[Behaviour(name='Dummy', id=None, parent=None)])]), 
+         Behaviour(name='Dummy', id=None, parent=None), 
+         Behaviour(name='Dummy', id=None, parent=None), 
+         Sequence(name='', memory=False, 
+                  children=[Behaviour(name='Dummy', id=None, parent=None)]), 
+         Behaviour(name='Dummy', id=None, parent=None)]
+        """
+    yield tree
+    
+    # Check if the node is a Sequence and has children to iterate over
+    if isinstance(tree, Sequence):
+        for child in tree.children:
+            yield from iterate_nodes(child)
 
 
-# def enumerate_nodes(tree: Behaviour):
-#     """
-#     Examples:
+def enumerate_nodes(tree: Behaviour):
+    """
+    Examples:
+        >>> dummy_node = Behaviour(name="Dummy")
+        >>> pprint(list(enumerate_nodes(dummy_node)))
+        [(0, Behaviour(name='Dummy', id=None, parent=None))]
 
-#         >>> list(enumerate_nodes(py_trees.behaviours.Dummy()))
-#         ... # doctest: +ELLIPSIS
-#         [(0, <py_trees.behaviours.Dummy object at 0x...>)]
-#         >>> list(enumerate_nodes(
-#         ...     py_trees.composites.Sequence("", False, children=[
-#         ...         py_trees.behaviours.Dummy(),
-#         ... ])))  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-#         [(0, <py_trees.composites.Sequence object at 0x...>),
-#          (1, <py_trees.behaviours.Dummy object at 0x...>)]
-#         >>> list(enumerate_nodes(
-#         ...     py_trees.composites.Sequence("s1", False, children=[
-#         ...         py_trees.behaviours.Dummy(),
-#         ...         py_trees.behaviours.Success(),
-#         ...         py_trees.composites.Sequence("s2", False, children=[
-#         ...             py_trees.behaviours.Dummy(),
-#         ...         ]),
-#         ...         py_trees.composites.Sequence("", False, children=[
-#         ...             py_trees.behaviours.Failure(),
-#         ...             py_trees.behaviours.Periodic("p", n=1),
-#         ...         ]),
-#         ... ])))  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-#         [(0, <py_trees.composites.Sequence object at 0x...>),
-#          (1, <py_trees.behaviours.Dummy object at 0x...>),
-#          (2, <py_trees.behaviours.Success object at 0x...>),
-#          (3, <py_trees.composites.Sequence object at 0x...>),
-#          (4, <py_trees.behaviours.Dummy object at 0x...>),
-#          (5, <py_trees.composites.Sequence object at 0x...>),
-#          (6, <py_trees.behaviours.Failure object at 0x...>),
-#          (7, <py_trees.behaviours.Periodic object at 0x...>)]
-#     """
-#     return enumerate(iterate_nodes(tree))
-
+        >>> sequence = Sequence("", False, children=[dummy_node])
+        >>> pprint(list(enumerate_nodes(sequence)))
+        ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        [(0,
+        Sequence(name='',
+                memory=False,
+                children=[Behaviour(name='Dummy', id=None, parent=None)])),
+        (1, Behaviour(name='Dummy', id=None, parent=None))]
+        >>> success_node = Behaviour(name="Success")
+        >>> dummy_node_2 = Behaviour(name="Dummy")
+        >>> failure_node = Behaviour(name="Failure")
+        >>> success_node_2 = Behaviour(name="Success")
+        >>> sequence_2 = Sequence("", False, children=[dummy_node_2, success_node_2])
+        >>> sequence_3 = Sequence("", False, children=[failure_node])
+        >>> sequence_1 = Sequence("", False, children=[success_node, sequence_2, sequence_3])
+        >>> pprint(list(enumerate_nodes(sequence_1)))
+        ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        [(0,
+        Sequence(name='',
+                memory=False,
+                children=[Behaviour(name='Success', id=None, parent=None),
+                            Sequence(name='',
+                                    memory=False,
+                                    children=[Behaviour(name='Dummy',
+                                                        id=None,
+                                                        parent=None),
+                                                Behaviour(name='Success',
+                                                        id=None,
+                                                        parent=None)]),
+                            Sequence(name='',
+                                    memory=False,
+                                    children=[Behaviour(name='Failure',
+                                                        id=None,
+                                                        parent=None)])])),
+        (1, Behaviour(name='Success', id=None, parent=None)),
+        (2,
+        Sequence(name='',
+                memory=False,
+                children=[Behaviour(name='Dummy', id=None, parent=None),
+                            Behaviour(name='Success', id=None, parent=None)])),
+        (3, Behaviour(name='Dummy', id=None, parent=None)),
+        (4, Behaviour(name='Success', id=None, parent=None)),
+        (5,
+        Sequence(name='',
+                memory=False,
+                children=[Behaviour(name='Failure', id=None, parent=None)])),
+        (6, Behaviour(name='Failure', id=None, parent=None))]    
+    """
+    return enumerate(iterate_nodes(tree))
 
 # def label_tree_lines(
 #     tree: Behaviour,
