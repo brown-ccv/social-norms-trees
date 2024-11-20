@@ -8,7 +8,7 @@ from typing import Callable, List, Mapping, NamedTuple, Tuple, TypeVar, Union, D
 import click
 import typer
 
-from social_norms_trees.behaviour_tree_library import Behaviour, Sequence
+from social_norms_trees.behaviour_tree_library import Behavior, Composite, Sequence
 
 from pprint import pprint
 
@@ -18,15 +18,15 @@ _logger = logging.getLogger(__name__)
 # Argument types
 # =============================================================================
 
-ExistingNode = TypeVar("ExistingNode", bound=Behaviour)
-NewNode = TypeVar("NewNode", bound=Behaviour)
+ExistingNode = TypeVar("ExistingNode", bound=Behavior)
+NewNode = TypeVar("NewNode", bound=Behavior)
 CompositeIndex = TypeVar(
-    "CompositeIndex", bound=Tuple[Sequence, int]
+    "CompositeIndex", bound=Tuple[Composite, int]
 )
 BehaviorIdentifier = TypeVar(
     "BehaviorIdentifier", bound=Union[ExistingNode, NewNode, CompositeIndex]
 )
-BehaviorTreeNode = TypeVar("BehaviorTreeNode", bound=Behaviour)
+BehaviorTreeNode = TypeVar("BehaviorTreeNode", bound=Behavior)
 BehaviorTree = TypeVar("BehaviorTree", bound=BehaviorTreeNode)
 BehaviorLibrary = TypeVar("BehaviorLibrary", bound=List[BehaviorTreeNode])
 TreeOrLibrary = TypeVar("TreeOrLibrary", bound=Union[BehaviorTree, BehaviorLibrary])
@@ -41,98 +41,65 @@ TreeOrLibrary = TypeVar("TreeOrLibrary", bound=Union[BehaviorTree, BehaviorLibra
 # The argument annotations are vital, because they tell the UI which prompt
 # to use.
 
-
-def remove(node: ExistingNode) -> ExistingNode:
-    """
+#TODO: pass in the parent node, and do the action on the parent node directly.
+def remove(node: ExistingNode, parent: Composite) -> ExistingNode:
+    """Remove a node.
     Examples:
-        >>> success_node = Behaviour(name="Success")
-        >>> failure_node = Behaviour(name="Failure")
+        >>> success_node = Behavior(name="Success")
+        >>> failure_node = Behavior(name="Failure")
 
-        >>> tree = Sequence("", False)
+        >>> tree = Sequence("")
         >>> tree.add_child(success_node)
         >>> tree.add_child(failure_node)
 
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
         Sequence(name='',
-                  memory=False,
-                  children=[Behaviour(name='Success',
-                                id=None,
-                                parent=...),
-                            Behaviour(name='Failure',
-                                id=None,
-                                parent=...)])
-
-        >>> removed = remove(failure_node)
+              children=[Behavior(name='Success', id=None),
+                        Behavior(name='Failure', id=None)])
+        
+        >>> removed = remove(failure_node, tree)
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
-        Sequence(name='', 
-                  memory=False, 
-                  children=[Behaviour(name='Success', 
-                                id=None, 
-                                parent=...)])
+        Sequence(name='',
+              children=[Behavior(name='Success', id=None)])
     """
-    if node.parent is None:
-        msg = (
-            f"%s's parent is None, so we can't remove it. We can't remove the root node."
-            % (node)
-        )
-        raise ValueError(msg)
-    elif isinstance(node.parent, Sequence):
-        node.parent.remove_child(node)
-    else:
-        raise NotImplementedError()
+    parent.remove_child(node)
     return node
 
 
 def insert(node: NewNode, where: CompositeIndex) -> None:
     """Insert a new node.
     Examples:
-        >>> success_node = Behaviour(name="Success")
-
-        >>> tree = Sequence("", False)
-        >>> tree.add_child(success_node)
+        >>> success_node = Behavior(name="Success")
+        >>> tree = Sequence("", children=[success_node])
 
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
         Sequence(name='',
-                  memory=False,
-                  children=[Behaviour(name='Success',
-                                id=None,
-                                parent=...)])
+              children=[Behavior(name='Success', id=None)])
 
-        >>> failure_node = Behaviour(name="Failure")
+        >>> failure_node = Behavior(name="Failure")
         >>> insert(failure_node, (tree, 1))
 
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
         Sequence(name='',
-                  memory=False,
-                  children=[Behaviour(name='Success',
-                                id=None,
-                                parent=...),
-                            Behaviour(name='Failure',
-                                id=None,
-                                parent=...)])
+              children=[Behavior(name='Success', id=None),
+                        Behavior(name='Failure', id=None)])
 
-        >>> dummy_node = Behaviour(name="Dummy")
+        >>> dummy_node = Behavior(name="Dummy")
         >>> insert(dummy_node, (tree, 0))
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
         Sequence(name='',
-                  memory=False,
-                  children=[Behaviour(name='Dummy',
-                                id=None,
-                                parent=...),
-                            Behaviour(name='Success',
-                                id=None,
-                                parent=...),
-                            Behaviour(name='Failure',
-                                id=None,
-                                parent=...)])
+            children=[Behavior(name='Dummy', id=None),
+                    Behavior(name='Success', id=None),
+                    Behavior(name='Failure', id=None)])
     """
+
     parent, index = where
-    parent.insert_child(node, index)
+    parent.insert_child(index, node)
     return
 
 
@@ -143,139 +110,99 @@ def move(
     """Move a node.
     Examples:
 
-        >>> success_node = Behaviour(name="Success")
-        >>> failure_node = Behaviour(name="Failure")
+        >>> success_node = Behavior(name="Success")
+        >>> failure_node = Behavior(name="Failure")
 
-        >>> tree = Sequence("", False)
+        >>> tree = Sequence("")
         >>> tree.add_child(success_node)
         >>> tree.add_child(failure_node)
 
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
-        Sequence(name='', memory=False,
-                  children=[Behaviour(name='Success', id=None, parent=...),
-                            Behaviour(name='Failure',
-                                id=None,
-                                parent=...)])
+        Sequence(name='',
+            children=[Behavior(name='Success', id=None),
+                    Behavior(name='Failure', id=None)])
         
         >>> move(failure_node, (tree, 0))
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
-        Sequence(name='', memory=False,
-                  children=[Behaviour(name='Failure',
-                                id=None,
-                                parent=...),
-                            Behaviour(name='Success',
-                                id=None,
-                                parent=...)])
+        Sequence(name='',
+            children=[Behavior(name='Failure', id=None),
+                    Behavior(name='Success', id=None)])
     """
     parent, index = where
-    insert(remove(node), (parent, index))
+    insert(remove(node, parent), (parent, index))
     return
 
 
 
-# # =============================================================================
-# # Node and Position Selectors
-# # =============================================================================
+# # # =============================================================================
+# # # Node and Position Selectors
+# # # =============================================================================
 
 from typing import Union, Generator
 
-def iterate_nodes(tree: Union[Behaviour, Sequence]):
+def iterate_nodes(tree: Union[Behavior, Sequence]):
     """
     Examples:
-        >>> dummy_node = Behaviour(name="Dummy")
+        >>> dummy_node = Behavior(name="Dummy")
 
         >>> list(iterate_nodes(dummy_node))
         ... # doctest: +ELLIPSIS
-        [Behaviour(name='Dummy', id=None, parent=None)]
+        [Behavior(name='Dummy', id=None)]
 
-        >>> sequence = Sequence("", False, children=[dummy_node])
+        >>> sequence = Sequence("", children=[dummy_node])
         >>> pprint(list(iterate_nodes(sequence)))
         ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-        [Sequence(name='', memory=False, 
-                    children=[Behaviour(name='Dummy', id=None, parent=None)]), 
-                            Behaviour(name='Dummy', id=None, parent=None)]
+        [Sequence(name='', children=[Behavior(name='Dummy', id=None)]),
+        Behavior(name='Dummy', id=None)]
 
-        >>> dummy_node_2 = Behaviour(name="Dummy")
-        >>> dummy_node_3 = Behaviour(name="Dummy")
-        >>> sequence_2 = Sequence("", False, children=[dummy_node_3])
-        >>> sequence_3 = Sequence("", False, children=[dummy_node, dummy_node_2, sequence_2])
+        >>> dummy_node_2 = Behavior(name="Dummy")
+        >>> dummy_node_3 = Behavior(name="Dummy")
+        >>> sequence_2 = Sequence("", children=[dummy_node_3])
+        >>> sequence_3 = Sequence("", children=[dummy_node, dummy_node_2, sequence_2])
         >>> pprint(list(iterate_nodes(sequence_3)))
         ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-        [Sequence(name='', memory=False, 
-                    children=[Behaviour(name='Dummy', id=None, parent=None), 
-                            Behaviour(name='Dummy', id=None, parent=None), 
-                            Sequence(name='', memory=False, 
-                                     children=[Behaviour(name='Dummy', id=None, parent=None)])]), 
-         Behaviour(name='Dummy', id=None, parent=None), 
-         Behaviour(name='Dummy', id=None, parent=None), 
-         Sequence(name='', memory=False, 
-                  children=[Behaviour(name='Dummy', id=None, parent=None)]), 
-         Behaviour(name='Dummy', id=None, parent=None)]
+        [Sequence(name='',
+            children=[Behavior(name='Dummy', id=None),
+                    Behavior(name='Dummy', id=None),
+                    Sequence(name='',
+                                children=[Behavior(name='Dummy', id=None)])]),
+        Behavior(name='Dummy', id=None),
+        Behavior(name='Dummy', id=None),
+        Sequence(name='', children=[Behavior(name='Dummy', id=None)]),
+        Behavior(name='Dummy', id=None)]
         """
     yield tree
     
     # Check if the node is a Sequence and has children to iterate over
-    if isinstance(tree, Sequence):
+    if hasattr(tree, "children"):
         for child in tree.children:
             yield from iterate_nodes(child)
 
 
-def enumerate_nodes(tree: Behaviour):
+def enumerate_nodes(tree: Behavior):
     """
     Examples:
-        >>> dummy_node = Behaviour(name="Dummy")
-        >>> pprint(list(enumerate_nodes(dummy_node)))
-        [(0, Behaviour(name='Dummy', id=None, parent=None))]
+        >>> dummy_node = Behavior(name="Dummy")
+        >>> print(list(enumerate_nodes(dummy_node)))
+        [(0, Behavior(name='Dummy', id=None))]
 
-        >>> sequence = Sequence("", False, children=[dummy_node])
-        >>> pprint(list(enumerate_nodes(sequence)))
+        >>> sequence = Sequence("", children=[dummy_node])
+        >>> print(list(enumerate_nodes(sequence)))
         ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-        [(0,
-        Sequence(name='',
-                memory=False,
-                children=[Behaviour(name='Dummy', id=None, parent=None)])),
-        (1, Behaviour(name='Dummy', id=None, parent=None))]
-        >>> success_node = Behaviour(name="Success")
-        >>> dummy_node_2 = Behaviour(name="Dummy")
-        >>> failure_node = Behaviour(name="Failure")
-        >>> success_node_2 = Behaviour(name="Success")
-        >>> sequence_2 = Sequence("", False, children=[dummy_node_2, success_node_2])
-        >>> sequence_3 = Sequence("", False, children=[failure_node])
-        >>> sequence_1 = Sequence("", False, children=[success_node, sequence_2, sequence_3])
-        >>> pprint(list(enumerate_nodes(sequence_1)))
+        [(0, Sequence(name='', children=[Behavior(name='Dummy', id=None)])), (1, Behavior(name='Dummy', id=None))]
+
+        >>> success_node = Behavior(name="Success")
+        >>> dummy_node_2 = Behavior(name="Dummy")
+        >>> failure_node = Behavior(name="Failure")
+        >>> success_node_2 = Behavior(name="Success")
+        >>> sequence_2 = Sequence("", children=[dummy_node_2, success_node_2])
+        >>> sequence_3 = Sequence("", children=[failure_node])
+        >>> sequence_1 = Sequence("", children=[success_node, sequence_2, sequence_3])
+        >>> print(list(enumerate_nodes(sequence_1)))
         ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-        [(0,
-        Sequence(name='',
-                memory=False,
-                children=[Behaviour(name='Success', id=None, parent=None),
-                            Sequence(name='',
-                                    memory=False,
-                                    children=[Behaviour(name='Dummy',
-                                                        id=None,
-                                                        parent=None),
-                                                Behaviour(name='Success',
-                                                        id=None,
-                                                        parent=None)]),
-                            Sequence(name='',
-                                    memory=False,
-                                    children=[Behaviour(name='Failure',
-                                                        id=None,
-                                                        parent=None)])])),
-        (1, Behaviour(name='Success', id=None, parent=None)),
-        (2,
-        Sequence(name='',
-                memory=False,
-                children=[Behaviour(name='Dummy', id=None, parent=None),
-                            Behaviour(name='Success', id=None, parent=None)])),
-        (3, Behaviour(name='Dummy', id=None, parent=None)),
-        (4, Behaviour(name='Success', id=None, parent=None)),
-        (5,
-        Sequence(name='',
-                memory=False,
-                children=[Behaviour(name='Failure', id=None, parent=None)])),
-        (6, Behaviour(name='Failure', id=None, parent=None))]    
+        [(0, Sequence(name='', children=[Behavior(name='Success', id=None), Sequence(name='', children=[Behavior(name='Dummy', id=None), Behavior(name='Success', id=None)]), Sequence(name='', children=[Behavior(name='Failure', id=None)])])), (1, Behavior(name='Success', id=None)), (2, Sequence(name='', children=[Behavior(name='Dummy', id=None), Behavior(name='Success', id=None)])), (3, Behavior(name='Dummy', id=None)), (4, Behavior(name='Success', id=None)), (5, Sequence(name='', children=[Behavior(name='Failure', id=None)])), (6, Behavior(name='Failure', id=None))]
     """
     return enumerate(iterate_nodes(tree))
 
