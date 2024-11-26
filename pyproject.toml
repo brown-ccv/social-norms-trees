@@ -112,7 +112,7 @@ test = [
 "Source" = "https://github.com/pypa/sampleproject/"
 
 [project.scripts]  # Optional
-social-norms-trees = "social-norms-trees.ui_wrapper:app"
+social-norms-trees = "social_norms_trees.ui_wrapper:app"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -123,3 +123,6 @@ version.source = "vcs"
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
