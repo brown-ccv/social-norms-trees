@@ -2,7 +2,8 @@
     "editor.formatOnSave": true,
     "black-formatter.importStrategy": "fromEnvironment",
     "python.testing.pytestArgs": [
-        "."
+        ".",
+        "--doctest-modules"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,

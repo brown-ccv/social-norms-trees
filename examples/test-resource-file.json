@@ -6,10 +6,11 @@
             "unlock_cabinet",
             "retrieve_medicine"
         ],
-        "behaviour_library": [
+        "behavior_library": [
             {
                 "id": "take_path_to_medicine_cabinet",
-                "name": "take acceptable path to the medicine cabinet"
+                "name": "take acceptable path to the medicine cabinet",
+                "in_behavior_bank": false
             },
             {
                 "id": "unlock_cabinet",
@@ -21,15 +22,18 @@
             },
             {
                 "id": "retrieve_medicine",
-                "name": "retrieve the medicine"
+                "name": "retrieve the medicine",
+                "in_behavior_bank": false
             },
             {
                 "id": "wait_for_cabinet_access",
-                "name": "wait at medicine cabinet until it is accessible"
+                "name": "wait at medicine cabinet until it is accessible",
+                "in_behavior_bank": true
             },
             {
                 "id": "alert_adminstrator",
-                "name": "alert adminstrator for assistance"
+                "name": "alert adminstrator for assistance",
+                "in_behavior_bank": true
             }
         ],
         "interruptions": {
@@ -45,14 +49,16 @@
             "press_correct_floor_button",
             "exit_elevator"
         ],
-        "behaviour_library": [
+        "behavior_library": [
             {
                 "id": "take_path_to_elevator",
-                "name": "take acceptable path to the elevator"
+                "name": "take acceptable path to the elevator",
+                "in_behavior_bank": false
             },
             {
                 "id": "get_into_elevator",
-                "name": "get into the elevator"
+                "name": "get into the elevator",
+                "in_behavior_bank": false
             },
             {
                 "id": "press_correct_floor_button",
@@ -64,11 +70,13 @@
             },
             {
                 "id": "wait_for_elevator_access",
-                "name": "wait at elevator entrance until it is accessible"
+                "name": "wait at elevator entrance until it is accessible",
+                "in_behavior_bank": true
             },
             {
                 "id": "alert_adminstrator",
-                "name": "alert adminstrator for assistance"
+                "name": "alert adminstrator for assistance",
+                "in_behavior_bank": true
             }
         ],
         "interruptions": {
