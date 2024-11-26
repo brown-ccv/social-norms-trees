@@ -341,7 +341,7 @@ def run_experiment(db, all_resources, experiment_id):
 app = typer.Typer()
 
 
-@app.command()
+# @app.command()
 def main(
     resources_file: Annotated[
         pathlib.Path,
@@ -393,4 +393,4 @@ def main(
 
 
 if __name__ == "__main__":
-    app()
+    main()
