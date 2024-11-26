@@ -11,8 +11,8 @@ import time
 
 import typer
 
-from behavior_tree_library import Behavior, Sequence
-from atomic_mutations import remove, insert, move
+from social_norms_trees.behavior_tree_library import Behavior, Sequence
+from social_norms_trees.atomic_mutations import remove, insert, move
 from colorama import Fore, Back, Style
 
 from interactive_ui import run_interactive_list

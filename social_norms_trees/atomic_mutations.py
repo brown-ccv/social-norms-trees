@@ -8,7 +8,7 @@ from typing import Callable, List, Mapping, NamedTuple, Tuple, TypeVar, Union, D
 import click
 import typer
 
-from behavior_tree_library import Behavior, Composite, Sequence
+from social_norms_trees.behavior_tree_library import Behavior, Composite, Sequence
 
 from pprint import pprint
 
