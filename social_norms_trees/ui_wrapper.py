@@ -14,7 +14,7 @@ import typer
 from social_norms_trees.behavior_tree_library import Behavior, Sequence
 from social_norms_trees.atomic_mutations import remove, insert, move
 
-from interactive_ui import run_interactive_list
+from social_norms_trees.interactive_ui import run_interactive_list
 
 # import keyboard  # Make sure to install this module with `pip install keyboard`
 
