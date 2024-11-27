@@ -273,16 +273,12 @@ def run_milestone(subgoal_resources, title, db):
     db["action_history"] = []
 
     #present context for this subgoal
+    print("\n =========================================================")
     time.sleep(SLEEP_TIME)
     print("\n" + subgoal_resources["context"])
 
     print(f"\nBot: I am starting the following milestone: {title}\n")
-
     time.sleep(SLEEP_TIME)
-    #node dictionary has 3 attributes
-    # - context
-    # - behaviors list
-    # - subtree, with children list
 
     summarize_behaviors_check(subgoal_resources, db)
     
@@ -345,10 +341,7 @@ def main(
 
     print("AIT Prototype #1 Simulator")
 
-    # TODO: write up some context, assumptions made in the README
-
     db = load_db(db_file)
-
 
     # load robot profile to run experiment on, and behavior library
     resource_file = f"{robot}-resource-file.json"
@@ -358,7 +351,8 @@ def main(
     
     #TODO: update the colors of the instructions in the prompt toolkit, change the color
     #when we move from first to second interface
-    print(f"Bot: Hello {name}, welcome to the agent interactive training experiment. Let's begin!")
+    print(f"Bot: Hello {name}, welcome to the agent iteractive training experiment! My name is {robot}. We will be working together to achieve a specific milestone. I will first provide you with a list of actions I plan to take to accomplish the goal. After reviewing the list, you will have the opportunity to make any adjustments to these actions. Once you're satisfied with the plan, I will perform the actions. Let's begin!")
+    time.sleep(SLEEP_TIME)
     db = run_experiment(db, all_resources, experiment_id)
 
     save_db(db, db_file)
