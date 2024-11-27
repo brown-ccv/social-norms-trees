@@ -29,7 +29,9 @@ def load_db(db_file):
 def save_db(db, db_file):
     """Saves the Python dictionary back to db.json."""
 
-    print(f"\nWriting results of simulation to {db_file}...")
+    print(f"Writing results of simulation to {db_file}...")
+    time.sleep(SLEEP_TIME)
+    print("Done.")
 
     json_representation = json.dumps(db, indent=4)
 
@@ -37,14 +39,14 @@ def save_db(db, db_file):
         f.write(json_representation)
 
 
-def experiment_setup(db):
-    name = participant_login()
+def experiment_setup(db, resource_file):
+    participant_name = participant_login()
 
-    experiment_id = initialize_experiment_record(db, name)
+    experiment_id = initialize_experiment_record(db, participant_name, resource_file)
 
     print("\nSetup Complete.\n")
 
-    return name, experiment_id
+    return participant_name, experiment_id
 
 
 def participant_login():
@@ -147,16 +149,14 @@ def load_resources(resource_file):
        
     return all_resources
 
-def initialize_experiment_record(db, name):
+def initialize_experiment_record(db, participant_name, resource_file):
     experiment_id = str(uuid.uuid4())
 
-    # TODO: look into python data class
-
     experiment_record = {
-        "experiment_id": experiment_id,
-        "participant_name": name,
+        "participant_name": participant_name,
         "experiment_start_date": datetime.now().isoformat(),
-        "experiment_progression": {}
+        "experiment_progression": {},
+        "resource_file": resource_file
     }
 
     db[experiment_id] = experiment_record
@@ -354,7 +354,7 @@ def main(
     resource_file = f"{robot}-resource-file.json"
     all_resources = load_resources(resource_file)
 
-    name, experiment_id = experiment_setup(db)
+    name, experiment_id = experiment_setup(db, resource_file)
     
     #TODO: update the colors of the instructions in the prompt toolkit, change the color
     #when we move from first to second interface
@@ -363,9 +363,10 @@ def main(
 
     save_db(db, db_file)
 
-    # TODO: define export file, that will be where we export the results to
     # TODO: Add more context to simulation ending
-    print("\nSimulation has ended.")
+    print(f"\nThank you, {name}, for participating in the experiment. "
+          f"The experiment has concluded, and the results have been recorded in the {db_file} file. "
+          "We greatly appreciate your time and effort!")
 
     # TODO: visualize the differences between old and new behavior trees after experiment.
     # Potentially use git diff
