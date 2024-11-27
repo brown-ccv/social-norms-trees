@@ -13,7 +13,6 @@ import typer
 
 from social_norms_trees.behavior_tree_library import Behavior, Sequence
 from social_norms_trees.atomic_mutations import remove, insert, move
-from colorama import Fore, Back, Style
 
 from interactive_ui import run_interactive_list
 
@@ -178,7 +177,7 @@ def display_tree_one_level(node, indent=0,):
     if isinstance(node, Sequence):
         if node.children:
             for child in node.children:
-                print(f"{Back.GREEN} " * indent + f" -> {child.name}")
+                print(f" " * indent + f" -> {child.name}")
 
 
 def run_tree_manipulation(behavior_library, tree, db):
