@@ -18,6 +18,7 @@ from social_norms_trees.interactive_ui import run_interactive_list
 
 SLEEP_TIME = 2
 
+
 def load_db(db_file):
     if os.path.exists(db_file):
         with open(db_file, "r") as f:
@@ -55,21 +56,20 @@ def participant_login():
     return name
 
 
-
-
 def deserialize_behaviors(behaviors):
     deserialized_behaviors = {}
 
     for behavior in behaviors:
-        deserialized_behaviors[behavior["id"]] = Behavior(id=behavior["id"], name=behavior["name"])
+        deserialized_behaviors[behavior["id"]] = Behavior(
+            id=behavior["id"], name=behavior["name"]
+        )
 
     return deserialized_behaviors
 
 
 def build_tree(subtree, children, behaviors):
-    
     children_behaviors = []
-    
+
     parent_node = Sequence(
         name=subtree,
     )
@@ -77,21 +77,20 @@ def build_tree(subtree, children, behaviors):
     for behavior_id in children:
         behaviors[behavior_id].parent = parent_node
         children_behaviors.append(behaviors[behavior_id])
-    
-    return Sequence(
-        name=subtree,
-        children= children_behaviors
-    )
+
+    return Sequence(name=subtree, children=children_behaviors)
+
 
 def serialize_tree(behavior_tree):
     children_list = []
-    
+
     for node in behavior_tree.children:
         children_list.append(node.id)
     return children_list
-        
-#behaviors = deserialized behavious
-#behavior_list = array of all behaviors
+
+
+# behaviors = deserialized behavious
+# behavior_list = array of all behaviors
 def build_behavior_bank(behaviors, behavior_list):
     behavior_bank = []
 
@@ -99,7 +98,6 @@ def build_behavior_bank(behaviors, behavior_list):
         if "in_behavior_bank" in behavior and behavior["in_behavior_bank"]:
             behavior_bank.append(behaviors[behavior["id"]])
     return behavior_bank
-
 
 
 def display_tree(node, indent=0):
@@ -110,7 +108,8 @@ def display_tree(node, indent=0):
             for child in node.children:
                 display_tree(child, indent + 4)
     elif isinstance(node, Behavior):
-        print(" " * indent + " -> " +  node.name)
+        print(" " * indent + " -> " + node.name)
+
 
 def load_resources(resource_file):
     try:
@@ -119,24 +118,23 @@ def load_resources(resource_file):
         resource_file = pkg_resources.files("examples") / resource_file
         with resource_file.open() as f:
             resources = json.load(f)
-        
+
     except json.JSONDecodeError:
         raise ValueError("Error")
     except Exception:
         raise RuntimeError("Error")
-    
+
     all_resources = {}
 
     for subtree in resources:
-        
         children = resources[subtree].get("children")
         behavior_list = resources[subtree].get("behavior_library")
         context_paragraph = resources[subtree].get("context")
 
-        #deserialize behavior_list
+        # deserialize behavior_list
         deserialized_behaviors = deserialize_behaviors(behavior_list)
-        
-        #then use it to build the subgoal behavior tree
+
+        # then use it to build the subgoal behavior tree
         sub_tree = build_tree(subtree, children, deserialized_behaviors)
 
         behavior_bank = build_behavior_bank(deserialized_behaviors, behavior_list)
@@ -144,10 +142,11 @@ def load_resources(resource_file):
         all_resources[subtree] = {
             "context": context_paragraph,
             "behaviors": behavior_bank,
-            "sub_tree": sub_tree
+            "sub_tree": sub_tree,
         }
-       
+
     return all_resources
+
 
 def initialize_experiment_record(db, participant_name, resource_file):
     experiment_id = str(uuid.uuid4())
@@ -156,19 +155,25 @@ def initialize_experiment_record(db, participant_name, resource_file):
         "participant_name": participant_name,
         "experiment_start_date": datetime.now().isoformat(),
         "experiment_progression": {},
-        "resource_file": resource_file
+        "resource_file": resource_file,
     }
 
     db[experiment_id] = experiment_record
 
     return experiment_id
 
+
 def summarize_behaviors_check(subgoal_resources, db):
     print("Bot: Here are the actions, in order, that I will take to achieve this goal.")
-    run_tree_manipulation(subgoal_resources["behaviors"], subgoal_resources["sub_tree"], db)
-        
-         
-def display_tree_one_level(node, indent=0,):
+    run_tree_manipulation(
+        subgoal_resources["behaviors"], subgoal_resources["sub_tree"], db
+    )
+
+
+def display_tree_one_level(
+    node,
+    indent=0,
+):
     print(" " * indent + node.name)
 
     if isinstance(node, Sequence):
@@ -178,8 +183,7 @@ def display_tree_one_level(node, indent=0,):
 
 
 def run_tree_manipulation(behavior_library, tree, db):
-
-    try: 
+    try:
         while True:
             print("\n")
             display_tree_one_level(tree)
@@ -191,21 +195,23 @@ def run_tree_manipulation(behavior_library, tree, db):
 
             if user_choice == "y":
                 action = click.prompt(
-                        "\n1. move an existing node\n"
-                        + "2. remove an existing node\n"
-                        + "3. add a new node\n"
-                        + "Please select an action to perform on the behavior tree",
-                        type=click.IntRange(min=1, max=4),
-                        show_choices=True,
-                    )
+                    "\n1. move an existing node\n"
+                    + "2. remove an existing node\n"
+                    + "3. add a new node\n"
+                    + "Please select an action to perform on the behavior tree",
+                    type=click.IntRange(min=1, max=4),
+                    show_choices=True,
+                )
 
                 if action == 1:
-                    #Select node to be moved
+                    # Select node to be moved
                     selected_node = run_interactive_list(tree.children, mode="select")
-                    #Select position of node
-                    selected_index = run_interactive_list(tree.children, mode="move", new_behavior=selected_node)
-                    #Perform operation
-                    move(selected_node, (tree, selected_index))  
+                    # Select position of node
+                    selected_index = run_interactive_list(
+                        tree.children, mode="move", new_behavior=selected_node
+                    )
+                    # Perform operation
+                    move(selected_node, (tree, selected_index))
 
                     action_log = {
                         "type": "move_node",
@@ -217,12 +223,11 @@ def run_tree_manipulation(behavior_library, tree, db):
                         "timestamp": datetime.now().isoformat(),
                     }
                     db["action_history"].append(action_log)
-                
 
                 elif action == 2:
-                    #Select node to be removed
+                    # Select node to be removed
                     selected_node = run_interactive_list(tree.children, mode="select")
-                    #Perform operation
+                    # Perform operation
                     remove(selected_node, tree)
 
                     action_log = {
@@ -235,15 +240,18 @@ def run_tree_manipulation(behavior_library, tree, db):
                     db["action_history"].append(action_log)
 
                 elif action == 3:
+                    # TODO: think about where the new action should originally show up in the list. It's original position could
+                    # possible affect participant's decision making
 
-                    #TODO: think about where the new action should originally show up in the list. It's original position could
-                    #possible affect participant's decision making
-
-                    #Select node to be add
-                    selected_node = run_interactive_list(behavior_library, mode="select")
-                    #Select position of node
-                    selected_index = run_interactive_list(tree.children, mode="insert", new_behavior=selected_node)
-                    #Perform operation
+                    # Select node to be add
+                    selected_node = run_interactive_list(
+                        behavior_library, mode="select"
+                    )
+                    # Select position of node
+                    selected_index = run_interactive_list(
+                        tree.children, mode="insert", new_behavior=selected_node
+                    )
+                    # Perform operation
                     insert(selected_node, (tree, selected_index))
 
                     action_log = {
@@ -252,7 +260,7 @@ def run_tree_manipulation(behavior_library, tree, db):
                         "timestamp": datetime.now().isoformat(),
                     }
                     db["action_history"].append(action_log)
-            
+
             else:
                 break
 
@@ -264,15 +272,14 @@ def run_tree_manipulation(behavior_library, tree, db):
 
     finally:
         return
-    
+
 
 def run_milestone(subgoal_resources, title, db):
-
     db["start_time"] = datetime.now().isoformat()
     db["base_subtree"] = serialize_tree(subgoal_resources["sub_tree"])
     db["action_history"] = []
 
-    #present context for this subgoal
+    # present context for this subgoal
     print("\n =========================================================")
     time.sleep(SLEEP_TIME)
     print("\n" + subgoal_resources["context"])
@@ -281,16 +288,18 @@ def run_milestone(subgoal_resources, title, db):
     time.sleep(SLEEP_TIME)
 
     summarize_behaviors_check(subgoal_resources, db)
-    
+
     time.sleep(SLEEP_TIME)
     print("\nBot: Okay, I will begin.")
 
-    for action in subgoal_resources["sub_tree"].children:        
+    for action in subgoal_resources["sub_tree"].children:
         time.sleep(SLEEP_TIME)
         print(f"\nBot: I am about to {action.name}")
-        
+
         if isinstance(action, Sequence):
-            print("Bot: This is a Sequence type node, would you like to see the sub-behaviors of this node?")
+            print(
+                "Bot: This is a Sequence type node, would you like to see the sub-behaviors of this node?"
+            )
         time.sleep(SLEEP_TIME)
         print(f"Action in progress..")
 
@@ -303,14 +312,20 @@ def run_milestone(subgoal_resources, title, db):
 def sub_function():
     print("subfunction pressed.")
 
+
 def run_experiment(db, all_resources, experiment_id):
     # Loop for the actual experiment part, which takes user input to decide which action to take
 
     for subgoal in all_resources:
         db[experiment_id]["experiment_progression"][subgoal] = {}
-        run_milestone(all_resources[subgoal], subgoal, db[experiment_id]["experiment_progression"][subgoal])
+        run_milestone(
+            all_resources[subgoal],
+            subgoal,
+            db[experiment_id]["experiment_progression"][subgoal],
+        )
 
     return db
+
 
 app = typer.Typer()
 
@@ -319,9 +334,7 @@ app = typer.Typer()
 def main(
     robot: Annotated[
         str,
-        typer.Argument(
-            help="Name of the robot to run experiment on"
-        ),
+        typer.Argument(help="Name of the robot to run experiment on"),
     ],
     db_file: Annotated[
         pathlib.Path,
@@ -348,19 +361,23 @@ def main(
     all_resources = load_resources(resource_file)
 
     name, experiment_id = experiment_setup(db, resource_file)
-    
-    #TODO: update the colors of the instructions in the prompt toolkit, change the color
-    #when we move from first to second interface
-    print(f"Bot: Hello {name}, welcome to the agent iteractive training experiment! My name is {robot}. We will be working together to achieve a specific milestone. I will first provide you with a list of actions I plan to take to accomplish the goal. After reviewing the list, you will have the opportunity to make any adjustments to these actions. Once you're satisfied with the plan, I will perform the actions. Let's begin!")
+
+    # TODO: update the colors of the instructions in the prompt toolkit, change the color
+    # when we move from first to second interface
+    print(
+        f"Bot: Hello {name}, welcome to the agent iteractive training experiment! My name is {robot}. We will be working together to achieve a specific milestone. I will first provide you with a list of actions I plan to take to accomplish the goal. After reviewing the list, you will have the opportunity to make any adjustments to these actions. Once you're satisfied with the plan, I will perform the actions. Let's begin!"
+    )
     time.sleep(SLEEP_TIME)
     db = run_experiment(db, all_resources, experiment_id)
 
     save_db(db, db_file)
 
     # TODO: Add more context to simulation ending
-    print(f"\nThank you, {name}, for participating in the experiment. "
-          f"The experiment has concluded, and the results have been recorded in the {db_file} file. "
-          "We greatly appreciate your time and effort!")
+    print(
+        f"\nThank you, {name}, for participating in the experiment. "
+        f"The experiment has concluded, and the results have been recorded in the {db_file} file. "
+        "We greatly appreciate your time and effort!"
+    )
 
     # TODO: visualize the differences between old and new behavior trees after experiment.
     # Potentially use git diff
