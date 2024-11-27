@@ -5,10 +5,8 @@ import logging
 from types import GenericAlias
 from typing import Callable, List, Mapping, NamedTuple, Tuple, TypeVar, Union, Dict
 
-import click
-import typer
 
-from social_norms_trees.behavior_tree_library import Behavior, Composite, Sequence
+from behavior_tree_library import Behavior, Composite, Sequence
 
 from pprint import pprint
 

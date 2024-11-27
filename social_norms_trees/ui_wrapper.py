@@ -8,13 +8,12 @@ import os
 import uuid
 import traceback
 import time
-
 import typer
 
-from social_norms_trees.behavior_tree_library import Behavior, Sequence
-from social_norms_trees.atomic_mutations import remove, insert, move
+from behavior_tree_library import Behavior, Sequence
+from atomic_mutations import remove, insert, move
 
-from social_norms_trees.interactive_ui import run_interactive_list
+from interactive_ui import run_interactive_list
 
 # import keyboard  # Make sure to install this module with `pip install keyboard`
 
@@ -342,10 +341,10 @@ app = typer.Typer()
 
 @app.command()
 def main(
-    resources_file: Annotated[
-        pathlib.Path,
+    robot: Annotated[
+        str,
         typer.Argument(
-            help="file with the experimental context, behavior tree, and behavior library"
+            help="Name of the robot to run experiment on"
         ),
     ],
     db_file: Annotated[
@@ -370,10 +369,10 @@ def main(
 
     db = load_db(db_file)
 
-    # load tree to run experiment on, and behavior library
 
-    all_resources = load_resources(resources_file)
-    # print(f"\nContext of this experiment: {context_paragraph}")
+    # load robot profile to run experiment on, and behavior library
+    resource_path = f"../examples/{robot}-resource-file.json"
+    all_resources = load_resources(pathlib.Path(resource_path))
     
     participant_id, experiment_id = experiment_setup(db)
     
