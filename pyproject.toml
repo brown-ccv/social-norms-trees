@@ -78,6 +78,7 @@ dependencies = [ # Optional
   "websockets",
   "click",
   "typer",
+  "prompt_toolkit"
 ]
 
 # List additional groups of dependencies here (e.g. development
