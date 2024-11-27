@@ -112,7 +112,7 @@ test = [
 "Say Thanks!" = "http://saythanks.io/to/example"
 "Source" = "https://github.com/pypa/sampleproject/"
 
-[project.scripts]  # Optional
+[project.scripts]
 social-norms-trees = "social_norms_trees.ui_wrapper:app"
 
 [build-system]
@@ -125,5 +125,8 @@ version.source = "vcs"
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
 
-[tool.hatch.build.targets.wheel]
-packages = ["."]
+[tool.hatch.build]
+include = [
+    "examples/**",
+    "social_norms_trees/**",
+]

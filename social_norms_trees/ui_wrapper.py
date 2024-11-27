@@ -9,14 +9,12 @@ import uuid
 import traceback
 import time
 import typer
+import importlib.resources as pkg_resources
 
 from social_norms_trees.behavior_tree_library import Behavior, Sequence
 from social_norms_trees.atomic_mutations import remove, insert, move
 
 from social_norms_trees.interactive_ui import run_interactive_list
-
-# import keyboard  # Make sure to install this module with `pip install keyboard`
-
 
 
 def load_db(db_file):
@@ -113,17 +111,19 @@ def display_tree(node, indent=0):
     elif isinstance(node, Behavior):
         print(" " * indent + " -> " +  node.name)
 
-def load_resources(file_path):
+def load_resources(resource_file):
     try:
-        print(f"\nLoading behavior tree and behavior library from {file_path}...\n")
-        with open(file_path, "r") as file:
-            resources = json.load(file)
-
+        print(f"\nLoading behavior tree and behavior library from {resource_file}...\n")
+        # Use importlib.resources to access files within the package
+        resource_file = pkg_resources.files("examples") / resource_file
+        with resource_file.open() as f:
+            resources = json.load(f)
+        
     except json.JSONDecodeError:
         raise ValueError("Error")
     except Exception:
         raise RuntimeError("Error")
-
+    
     all_resources = {}
 
     for subtree in resources:
@@ -327,12 +327,6 @@ def run_experiment(db, all_resources, experiment_id):
     for subgoal in all_resources:
         db[experiment_id]["experiment_progression"][subgoal] = {}
         run_milestone(all_resources[subgoal], subgoal, db[experiment_id]["experiment_progression"][subgoal])
-        # Check for 'p' key press to pause
-        # if keyboard.is_pressed('p'):
-        #     print("\nPaused. Running sub-function...")
-        #     sub_function()
-        #     print("Resuming iteration...")
-
 
     return db
 
@@ -371,9 +365,9 @@ def main(
 
 
     # load robot profile to run experiment on, and behavior library
-    resource_path = f"../examples/{robot}-resource-file.json"
-    all_resources = load_resources(pathlib.Path(resource_path))
-    
+    resource_file = f"{robot}-resource-file.json"
+    all_resources = load_resources(resource_file)
+
     participant_id, experiment_id = experiment_setup(db)
     
     #TODO: update the colors of the instructions in the prompt toolkit, change the color
