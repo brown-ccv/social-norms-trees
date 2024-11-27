@@ -205,9 +205,7 @@ def run_tree_manipulation(behavior_library, tree, db):
                     #Select position of node
                     selected_index = run_interactive_list(tree.children, mode="move", new_behavior=selected_node)
                     #Perform operation
-                    
-                    remove(selected_node, tree)
-                    tree.insert_child(selected_index, selected_node)
+                    move(selected_node, (tree, selected_index))  
 
                     action_log = {
                         "type": "move_node",
@@ -234,7 +232,6 @@ def run_tree_manipulation(behavior_library, tree, db):
                         ],
                         "timestamp": datetime.now().isoformat(),
                     }
-
                     db["action_history"].append(action_log)
 
                 elif action == 3:
@@ -247,16 +244,13 @@ def run_tree_manipulation(behavior_library, tree, db):
                     #Select position of node
                     selected_index = run_interactive_list(tree.children, mode="insert", new_behavior=selected_node)
                     #Perform operation
-                    tree.insert_child(selected_index, selected_node)
-
+                    insert(selected_node, (tree, selected_index))
 
                     action_log = {
                         "type": "add_node",
                         "node": {"name": selected_node.name},
                         "timestamp": datetime.now().isoformat(),
                     }
-
-
                     db["action_history"].append(action_log)
             
             else:
