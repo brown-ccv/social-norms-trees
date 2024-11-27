@@ -10,79 +10,79 @@ from typing import Optional, List, Callable
 from social_norms_trees.behavior_tree_library import Behavior
 
 
-def run_interactive_list(nodes: List, mode: str, new_behavior: Optional[Behavior] = None):
+def run_interactive_list(
+    nodes: List, mode: str, new_behavior: Optional[Behavior] = None
+):
     """
     Runs an interactive list UI to insert a new action.
     """
     selected_index = 0
-    
+
     if mode == "move":
         selected_index = nodes.index(new_behavior)
         nodes.remove(new_behavior)
-    
-    
+
     def get_display_text_insert():
         result = []
         for i in range(len(nodes) + 1):
             if i == selected_index:
-                result.append(('fg:green', f"-> {{{new_behavior.name}}}\n"))
+                result.append(("fg:green", f"-> {{{new_behavior.name}}}\n"))
             elif i < selected_index:
-                result.append(('fg:white', f"-> {nodes[i].name}\n"))
+                result.append(("fg:white", f"-> {nodes[i].name}\n"))
             else:
-                #now that selected index has moved behind this behavior, index is index-1
-                result.append(('fg:white', f"-> {nodes[i - 1].name}\n"))
+                # now that selected index has moved behind this behavior, index is index-1
+                result.append(("fg:white", f"-> {nodes[i - 1].name}\n"))
         return FormattedText(result)
-
 
     def get_display_text_select():
         result = []
         for i in range(len(nodes)):
             if i == selected_index:
-                result.append(('fg:green', f"-> {nodes[i].name}\n"))
+                result.append(("fg:green", f"-> {nodes[i].name}\n"))
             else:
-                result.append(('fg:white', f"-> {nodes[i].name}\n"))
+                result.append(("fg:white", f"-> {nodes[i].name}\n"))
 
         return FormattedText(result)
 
     instructions_set = {
         "insert": "Use the Up/Down arrow keys to select where to insert the action. ",
-        "select":  "Use the Up/Down arrow keys to select the desired action to operate on. ",
-        "move":  "Use the Up/Down arrow keys to select the new position for the action. "
+        "select": "Use the Up/Down arrow keys to select the desired action to operate on. ",
+        "move": "Use the Up/Down arrow keys to select the new position for the action. ",
     }
 
-
     # FormattedText used to define text and also text styling
-    instructions = FormattedText([
-        ('fg:#00ff00 bold', instructions_set[mode] +"Press Enter to confirm. Press esc to exit at anytime.")
-    ])
-
-    instructions_window = Window(
-        content=FormattedTextControl(instructions),
-        height=1,
-        align="center"
+    instructions = FormattedText(
+        [
+            (
+                "fg:#00ff00 bold",
+                instructions_set[mode]
+                + "Press Enter to confirm. Press esc to exit at anytime.",
+            )
+        ]
     )
 
+    instructions_window = Window(
+        content=FormattedTextControl(instructions), height=1, align="center"
+    )
 
-    #initial window display
+    # initial window display
     display_mode = {
         "insert": get_display_text_insert,
         "move": get_display_text_insert,
-        "select" :get_display_text_select
+        "select": get_display_text_select,
     }
 
     display = Window(
-        content=FormattedTextControl(
-            display_mode[mode]
-        ),
+        content=FormattedTextControl(display_mode[mode]),
         style="class:output",
         height=10,
-        align="center"
+        align="center",
     )
 
     # Key bindings
     kb = KeyBindings()
 
-    @kb.add('up')
+    @kb.add("up")
     def move_up(event):
         nonlocal selected_index
         if selected_index > 0:
@@ -92,7 +92,7 @@ def run_interactive_list(nodes: List, mode: str, new_behavior: Optional[Behavior
             elif mode == "select":
                 display.content.text = get_display_text_select()
 
-    @kb.add('down')
+    @kb.add("down")
     def move_down(event):
         nonlocal selected_index
 
@@ -101,20 +101,20 @@ def run_interactive_list(nodes: List, mode: str, new_behavior: Optional[Behavior
                 selected_index += 1
                 display.content.text = get_display_text_insert()
         elif mode == "select":
-            if selected_index < len(nodes)-1:
+            if selected_index < len(nodes) - 1:
                 selected_index += 1
                 display.content.text = get_display_text_select()
 
-    @kb.add('enter')
+    @kb.add("enter")
     def select_action(event):
         if mode == "insert" or mode == "move":
-            #nodes.insert(selected_index, new_behavior)
+            # nodes.insert(selected_index, new_behavior)
             app.exit(result=selected_index)
-            #app.exit(result=nodes)
+            # app.exit(result=nodes)
         elif mode == "select":
             app.exit(result=nodes[selected_index])
 
-    @kb.add('escape')
+    @kb.add("escape")
     def exit_without_changes(event):
         app.exit(result=None)
 
@@ -125,8 +125,10 @@ def run_interactive_list(nodes: List, mode: str, new_behavior: Optional[Behavior
             VSplit(
                 [
                     Window(),  # Left padding
-                    HSplit([instructions_window, Window(height=1), display], align="center"),
-                    Window()  # Right padding
+                    HSplit(
+                        [instructions_window, Window(height=1), display], align="center"
+                    ),
+                    Window(),  # Right padding
                 ],
                 align="center",
             ),
@@ -135,10 +137,12 @@ def run_interactive_list(nodes: List, mode: str, new_behavior: Optional[Behavior
     )
     layout = Layout(root_container)
 
-    style = Style.from_dict({
-        "output": "bg:#282c34 #ffffff bold",  # Dark grey background, text bold
-        "instructions": "fg:#00ff00 bold",
-    })
+    style = Style.from_dict(
+        {
+            "output": "bg:#282c34 #ffffff bold",  # Dark grey background, text bold
+            "instructions": "fg:#00ff00 bold",
+        }
+    )
 
     app = Application(layout=layout, key_bindings=kb, full_screen=True, style=style)
     return app.run()

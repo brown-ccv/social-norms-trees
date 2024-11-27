@@ -17,9 +17,7 @@ _logger = logging.getLogger(__name__)
 
 ExistingNode = TypeVar("ExistingNode", bound=Behavior)
 NewNode = TypeVar("NewNode", bound=Behavior)
-CompositeIndex = TypeVar(
-    "CompositeIndex", bound=Tuple[Composite, int]
-)
+CompositeIndex = TypeVar("CompositeIndex", bound=Tuple[Composite, int])
 BehaviorIdentifier = TypeVar(
     "BehaviorIdentifier", bound=Union[ExistingNode, NewNode, CompositeIndex]
 )
@@ -38,7 +36,8 @@ TreeOrLibrary = TypeVar("TreeOrLibrary", bound=Union[BehaviorTree, BehaviorLibra
 # The argument annotations are vital, because they tell the UI which prompt
 # to use.
 
-#TODO: pass in the parent node, and do the action on the parent node directly.
+
+# TODO: pass in the parent node, and do the action on the parent node directly.
 def remove(node: ExistingNode, parent: Composite) -> ExistingNode:
     """Remove a node.
     Examples:
@@ -54,7 +53,7 @@ def remove(node: ExistingNode, parent: Composite) -> ExistingNode:
         Sequence(name='',
               children=[Behavior(name='Success', id=None),
                         Behavior(name='Failure', id=None)])
-        
+
         >>> removed = remove(failure_node, tree)
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
@@ -119,7 +118,7 @@ def move(
         Sequence(name='',
             children=[Behavior(name='Success', id=None),
                     Behavior(name='Failure', id=None)])
-        
+
         >>> move(failure_node, (tree, 0))
         >>> pprint(tree)
         ... # doctest: +NORMALIZE_WHITESPACE
@@ -132,12 +131,12 @@ def move(
     return
 
 
-
 # # # =============================================================================
 # # # Node and Position Selectors
 # # # =============================================================================
 
 from typing import Union, Generator
+
 
 def iterate_nodes(tree: Union[Behavior, Sequence]):
     """
@@ -169,9 +168,9 @@ def iterate_nodes(tree: Union[Behavior, Sequence]):
         Behavior(name='Dummy', id=None),
         Sequence(name='', children=[Behavior(name='Dummy', id=None)]),
         Behavior(name='Dummy', id=None)]
-        """
+    """
     yield tree
-    
+
     # Check if the node is a Sequence and has children to iterate over
     if hasattr(tree, "children"):
         for child in tree.children:
@@ -216,4 +215,3 @@ class QuitException(Exception):
 def end_experiment():
     """I'm done, end the experiment."""
     raise QuitException("User ended the experiment.")
-

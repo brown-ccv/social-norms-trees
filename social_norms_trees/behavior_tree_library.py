@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
 from typing import Optional, List
 
+
 @dataclass
 class Behavior:
     name: str
     id: Optional[str] = None
+
 
 @dataclass
 class Composite:
@@ -22,9 +24,11 @@ class Composite:
         if child in self.children:
             self.children.remove(child)
 
+
 @dataclass
 class Sequence(Composite):
     pass
+
 
 @dataclass
 class Selector(Composite):
