@@ -18,11 +18,7 @@ def run_interactive_list(
     """
     selected_index = 0
 
-    fontColors = {
-        "move":"ff0000",
-        "select": "0080ff",
-        "insert": "00ff80"
-    } 
+    fontColors = {"move": "ff0000", "select": "0080ff", "insert": "00ff80"}
 
     if mode == "move":
         selected_index = nodes.index(new_behavior)
@@ -32,7 +28,9 @@ def run_interactive_list(
         result = []
         for i in range(len(nodes) + 1):
             if i == selected_index:
-                result.append((f"fg:#{fontColors[mode]}", f"-> {{{new_behavior.name}}}\n"))
+                result.append(
+                    (f"fg:#{fontColors[mode]}", f"-> {{{new_behavior.name}}}\n")
+                )
             elif i < selected_index:
                 result.append(("fg:white", f"-> {nodes[i].name}\n"))
             else:
