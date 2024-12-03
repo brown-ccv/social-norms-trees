@@ -7,8 +7,7 @@ from prompt_toolkit.styles import Style
 
 from typing import Optional, List, Callable
 
-#from social_norms_trees.behavior_tree_library import Behavior
-from behavior_tree_library import Behavior
+from social_norms_trees.behavior_tree_library import Behavior
 
 
 def run_interactive_list(
