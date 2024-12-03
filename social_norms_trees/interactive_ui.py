@@ -7,7 +7,8 @@ from prompt_toolkit.styles import Style
 
 from typing import Optional, List, Callable
 
-from social_norms_trees.behavior_tree_library import Behavior
+#from social_norms_trees.behavior_tree_library import Behavior
+from behavior_tree_library import Behavior
 
 
 def run_interactive_list(
@@ -18,6 +19,12 @@ def run_interactive_list(
     """
     selected_index = 0
 
+    fontColors = {
+        "move":"ff0000",
+        "select": "0080ff",
+        "insert": "00ff80"
+    } 
+
     if mode == "move":
         selected_index = nodes.index(new_behavior)
         nodes.remove(new_behavior)
@@ -26,7 +33,7 @@ def run_interactive_list(
         result = []
         for i in range(len(nodes) + 1):
             if i == selected_index:
-                result.append(("fg:green", f"-> {{{new_behavior.name}}}\n"))
+                result.append((f"fg:#{fontColors[mode]}", f"-> {{{new_behavior.name}}}\n"))
             elif i < selected_index:
                 result.append(("fg:white", f"-> {nodes[i].name}\n"))
             else:
@@ -38,7 +45,7 @@ def run_interactive_list(
         result = []
         for i in range(len(nodes)):
             if i == selected_index:
-                result.append(("fg:green", f"-> {nodes[i].name}\n"))
+                result.append((f"fg:#{fontColors[mode]}", f"-> {nodes[i].name}\n"))
             else:
                 result.append(("fg:white", f"-> {nodes[i].name}\n"))
 
@@ -54,7 +61,7 @@ def run_interactive_list(
     instructions = FormattedText(
         [
             (
-                "fg:#00ff00 bold",
+                f"fg:#{fontColors[mode]} bold",
                 instructions_set[mode]
                 + "Press Enter to confirm. Press esc to exit at anytime.",
             )
@@ -140,7 +147,7 @@ def run_interactive_list(
     style = Style.from_dict(
         {
             "output": "bg:#282c34 #ffffff bold",  # Dark grey background, text bold
-            "instructions": "fg:#00ff00 bold",
+            "instructions": f"fg:#{fontColors[mode]} bold",
         }
     )
 
