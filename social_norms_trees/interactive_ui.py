@@ -7,7 +7,7 @@ from prompt_toolkit.styles import Style
 
 from typing import Optional, List, Callable
 
-from social_norms_trees.behavior_tree_library import Behavior
+from behavior_tree_library import Behavior
 
 
 def run_interactive_list(
@@ -18,7 +18,7 @@ def run_interactive_list(
     """
     selected_index = 0
 
-    fontColors = {"move": "ff0000", "select": "0080ff", "insert": "00ff80"}
+    fontColors = {"move": "ff8000", "select": "0080ff", "insert": "00ff80"}
 
     if mode == "move":
         selected_index = nodes.index(new_behavior)
@@ -58,7 +58,7 @@ def run_interactive_list(
     instructions = FormattedText(
         [
             (
-                f"fg:#{fontColors[mode]} bold",
+                f"bg:#282c34 fg:#{fontColors[mode]} bold",
                 instructions_set[mode]
                 + "Press Enter to confirm. Press esc to exit at anytime.",
             )
