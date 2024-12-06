@@ -189,4 +189,7 @@ In order for a behavior to be included in the behavior bank, it must be specifie
 
 ``` "in_behavior_bank": true```
 
-If this attribute is not included or "in_behavior_bank": false, then this behavior will not be one of the options displayed when the participant is prompted to choose a behavior to add to the behavior tree.
+If this attribute is not included or `"in_behavior_bank": false`, then this behavior will not be one of the options displayed when the participant is prompted to choose a behavior to add to the behavior tree.
+
+#### interruptions
+TBD
