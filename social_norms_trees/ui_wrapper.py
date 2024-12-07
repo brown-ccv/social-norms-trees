@@ -206,10 +206,16 @@ def run_tree_manipulation(behavior_library, tree, db):
                 if action == 1:
                     # Select node to be moved
                     selected_node = run_interactive_list(tree.children, mode="select")
+                    if selected_node == None: 
+                        continue
+
                     # Select position of node
                     selected_index = run_interactive_list(
                         tree.children, mode="move", new_behavior=selected_node
                     )
+                    if selected_index == None:
+                        continue
+                    
                     # Perform operation
                     move(selected_node, (tree, selected_index))
 
@@ -227,6 +233,9 @@ def run_tree_manipulation(behavior_library, tree, db):
                 elif action == 2:
                     # Select node to be removed
                     selected_node = run_interactive_list(tree.children, mode="select")
+                    if selected_node == None: 
+                        continue
+
                     # Perform operation
                     remove(selected_node, tree)
 
@@ -247,10 +256,16 @@ def run_tree_manipulation(behavior_library, tree, db):
                     selected_node = run_interactive_list(
                         behavior_library, mode="select"
                     )
+                    if selected_node == None: 
+                        continue
+
                     # Select position of node
                     selected_index = run_interactive_list(
                         tree.children, mode="insert", new_behavior=selected_node
                     )
+                    if selected_index == None: 
+                        continue
+                    
                     # Perform operation
                     insert(selected_node, (tree, selected_index))
 
