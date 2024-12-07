@@ -78,6 +78,7 @@ dependencies = [ # Optional
   "websockets",
   "click",
   "typer",
+  "prompt_toolkit"
 ]
 
 # List additional groups of dependencies here (e.g. development
@@ -111,7 +112,7 @@ test = [
 "Say Thanks!" = "http://saythanks.io/to/example"
 "Source" = "https://github.com/pypa/sampleproject/"
 
-[project.scripts]  # Optional
+[project.scripts]
 social-norms-trees = "social_norms_trees.ui_wrapper:app"
 
 [build-system]
@@ -123,3 +124,9 @@ version.source = "vcs"
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
+
+[tool.hatch.build]
+include = [
+    "examples/**",
+    "social_norms_trees/**",
+]
